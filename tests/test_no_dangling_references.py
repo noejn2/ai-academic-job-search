@@ -47,6 +47,7 @@ RUNTIME_PATHS = {
     "job_search_tracker.csv",
     # Written into a packet by /apply or /outcome, per posting.
     "checklist.md",
+    "START_HERE.txt",
     "cv.tex",
     "cover_letter.tex",
     "job_posting.md",

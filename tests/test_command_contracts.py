@@ -511,6 +511,34 @@ class ScrapeOrderingTests(unittest.TestCase):
         self.assertIn("substring of the whole field", text)
 
 
+class SubmissionGuideTests(unittest.TestCase):
+    """The packet has to tell the user how to submit it, not only that it is correct."""
+
+    def test_apply_writes_a_start_here_file(self):
+        body = section(read(COMMANDS / "apply.md"), "## Step 7: Write the submission guide")
+        self.assertIn("START_HERE.txt", body)
+        for element in ("START THE APPLICATION HERE:", "UPLOAD FROM THIS FOLDER:",
+                        "BEFORE YOU UPLOAD:", "DEADLINE:"):
+            with self.subTest(element=element):
+                self.assertIn(element, body)
+
+    def test_the_upload_list_is_read_off_the_folder_after_compiling(self):
+        # Written from the Step 3 plan it drifts from the folder, and the user
+        # works down this list while a portal session times out.
+        body = flat(section(read(COMMANDS / "apply.md"), "## Step 7: Write the submission guide"))
+        self.assertIn("Every filename must be one that is on disk", body)
+        self.assertIn("never from the plan in Step 3", body)
+
+    def test_the_guide_never_lists_a_reference_letter(self):
+        body = flat(section(read(COMMANDS / "apply.md"), "## Step 7: Write the submission guide"))
+        self.assertIn("No reference letter is ever in the upload list", body)
+
+    def test_the_guide_does_not_invent_a_link(self):
+        body = flat(section(read(COMMANDS / "apply.md"), "## Step 7: Write the submission guide"))
+        self.assertIn("Never invent a requisition URL", body)
+        self.assertIn("this workflow still never fetches it", body)
+
+
 class ScrapeCanRunWhatItInstructsTests(unittest.TestCase):
     """A skill that instructs a command its own frontmatter forbids cannot follow itself.
 

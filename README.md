@@ -73,6 +73,7 @@ record once `/setup` runs - so work in a private clone, or keep those commits lo
 
 ```
 applications/<institution>_<role>/
+├── START_HERE.txt          where to apply, what to upload, what is still blocking
 ├── checklist.md            the posting's required documents, quoted, with status
 ├── job_posting.md          the posting text, archived verbatim
 ├── preamble.tex            shared by every .tex below, so the packet is one document

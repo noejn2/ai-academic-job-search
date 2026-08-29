@@ -1,5 +1,34 @@
 # Changelog
 
+## 1.2.0
+
+**Added**
+
+- `/apply` Step 7 writes `START_HERE.txt` into every packet: where to apply, the
+  vacancy number, the deadline, the exact filenames to upload with the posting's own
+  label beside each, what is still blocking, and the portal quirks that decide
+  whether the application counts as complete. A packet was verifiable but not
+  actionable - `checklist.md` is written for this command's own use, and nothing in
+  the folder told the user where to go. The upload list is read off the folder after
+  Step 6 rather than from the Step 3 plan, so a filename in it always exists.
+
+**Fixed**
+
+- `/scrape` instructed the browser-header retry from an `allowed-tools` list holding
+  neither `curl` nor a bare `Bash`, so the skill could not follow its own Step 3.
+  Introduced in 1.1.0. `Bash(curl:*)` is a capability declaration on the skill, not
+  an approval; `settings.json` still does not pre-approve it, so the retry prompts.
+- Moving the gates ahead of the per-posting fetch in 1.1.0 left the appointment and
+  language gates evaluating empty strings for exactly the records the fetch exists to
+  fill - the AAEA board publishes no `description` and no `appointment` - and nothing
+  re-gated afterwards. Step 3 now re-runs both on the filled record.
+- Four contract-test classes added in 1.1.0 sat below `if __name__ == "__main__"`, so
+  running the file directly executed 35 tests while `unittest discover` executed 52.
+  CI uses discover and stayed green throughout. A test now pins the guard's position.
+- The tracker-date contract test matched `submission date` against the whole of
+  `outcome.md`, where the freeze paragraph also carries the phrase, so deleting the
+  rule it exists to pin left the suite green. It now reads the tracker section only.
+
 ## 1.1.0
 
 Restores safeguards that were lost when this workspace was cut down from

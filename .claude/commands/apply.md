@@ -222,7 +222,59 @@ Delete `.aux`, `.log` and `.out` when the last compile is clean.
 
 ---
 
-## Step 7: Record and report
+## Step 7: Write the submission guide
+
+The packet is now correct. It is not yet actionable: `checklist.md` is a
+verification list this command wrote for itself, and nothing in the folder tells the
+user where to go, what to upload, or in which order. Write `START_HERE.txt` - plain
+text, no markdown, so it opens in anything and reads on a phone:
+
+```
+==============================================================================
+[Institution] - [Role, as the posting names it]
+==============================================================================
+
+START THE APPLICATION HERE:
+  [apply-at URL]
+
+REFERENCE: [vacancy or requisition number]
+DEADLINE:  [YYYY-MM-DD] [(review begins / rolling / open until filled), if stated]
+
+UPLOAD FROM THIS FOLDER:
+  - [exact filename]        [the posting's own label for it]
+
+BEFORE YOU UPLOAD:
+  - [each blocking item, one line - or "nothing"]
+
+NOTES:
+  [Portal quirks, and requirements quoted from the posting. Whether referees are
+   contacts now or letters by the deadline. Start date. Anything that decides
+   whether the application counts as complete.]
+
+Full detail, positioning and the stated gaps are in checklist.md in this folder.
+```
+
+- **Every filename must be one that is on disk.** Write this from the folder after
+  Step 6, never from the plan in Step 3. This is the list the user works down while a
+  portal session times out; a name that does not match the folder is worse than no
+  list at all.
+- **Give the posting's own label beside each file** when the portal's field names
+  differ from the filenames - `cover_letter.pdf -> Letter of Application`. A portal
+  that wants one combined PDF is a note, not a file list.
+- **This is the one place a URL from the posting is written down for the user**, who
+  clicks it; this workflow still never fetches it. When the posting gives no direct
+  link, say so and give what will find it - the careers portal, the search terms, the
+  department, the search chair the posting named. **Never invent a requisition URL.**
+- **Repeat the blocking items here**, not only in `checklist.md`. This is the file
+  the user opens; a missing transcript discovered at the portal is a lost deadline.
+- **No reference letter is ever in the upload list.** State whether the posting wants
+  referee contacts now or letters by the deadline, and that the referees send their
+  own.
+- Rewrite it whenever the packet is re-drafted. Never write one into `submitted/`.
+
+---
+
+## Step 8: Record and report
 
 ### Tracker
 Read `job_search_tracker.csv`; create it with this header if missing:
@@ -259,9 +311,11 @@ Fit [N]/100. Deadline [date]. Apply at: [URL]
 **Files** (applications/<institution>_<role>/): [list]
 **Checklist**: [N] of [M] required documents ready
 **Blocking**: [what the user must supply, or "nothing"]
+**Submit with**: applications/<institution>_<role>/START_HERE.txt
 **Tailoring decisions**: [3-5 lines: what was emphasised, which department angle,
  which gap was stated and how]
 **Not run**: ATS keyword extraction (not used in academic hiring)
 
-Next: submit, then `/outcome <institution>` to move this row to applied.
+Next: open `START_HERE.txt` and submit, then `/outcome <institution>` to move
+this row to applied.
 ```
