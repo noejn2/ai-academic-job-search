@@ -260,10 +260,6 @@ class CommandLineTests(unittest.TestCase):
         self.assertEqual(result.returncode, 2)
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class ParserIsolationTests(unittest.TestCase):
     """One board failing never aborts the others - BoardError's own promise.
 
@@ -401,3 +397,7 @@ class RetryTests(unittest.TestCase):
                     self.assertEqual(delay, boards.BACKOFF)  # fell back to backoff
                 else:
                     self.assertEqual(delay, expected)
+
+
+if __name__ == "__main__":
+    unittest.main()

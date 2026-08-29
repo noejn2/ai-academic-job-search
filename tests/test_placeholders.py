@@ -179,10 +179,6 @@ class NoPersonalDataTests(unittest.TestCase):
                     )
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class ScanCoverageTests(unittest.TestCase):
     """is_ignored matched an ignored directory name at any depth.
 
@@ -226,3 +222,7 @@ class IssueTemplateTests(unittest.TestCase):
         for risk in ("referees", "posting", "tracker row"):
             with self.subTest(risk=risk):
                 self.assertIn(risk, warning)
+
+
+if __name__ == "__main__":
+    unittest.main()

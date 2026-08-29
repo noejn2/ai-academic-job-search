@@ -1,5 +1,36 @@
 # Changelog
 
+## 1.3.1
+
+Fixes four regressions 1.3.0 introduced, found by re-running the side-by-side
+comparison against upstream immediately after shipping it.
+
+**Fixed**
+
+- Ten test classes in `test_boards.py` and five in `test_placeholders.py` had been
+  appended below `if __name__ == "__main__"`, so they were dark on a direct run and
+  alive only under `unittest discover`, which is what CI uses. They were the tests
+  for everything 1.3.0 fixed. The guard test added in 1.2.0 to prevent exactly this
+  checked only its own file; it now checks every test file, anchored to column 0 so
+  a docstring quoting the guard does not read as one.
+- `/scrape` Step 4 said `first_seen` was "the only field a later sweep must not
+  touch", so `status` was refreshed on every sweep - resetting a posting `/rank` had
+  scored, gated, expired or retired back to `new`. That re-surfaced searches the user
+  had already triaged and made the 120-day window added in 1.3.0 unable to ever
+  close. A sweep now refreshes what the boards publish and leaves `status` and `gate`
+  alone once anything but `/scrape` has written them.
+- `/rank` Step 4 counted `<S> stale` in the shortlist header and never listed them,
+  though every other status has a reporting line. The command retires those searches
+  on its own judgement, and only the user can say the window is wrong.
+- `/scrape` Step 2's preamble said every listed failure stores `status: skipped` with
+  a gate recorded, while item 5 - rewritten in 1.3.0 - stores `expired` with no gate.
+
+**Changed**
+
+- The 1.3.0 note on `tests/support.py` said a nested lookalike directory "escaped
+  every personal-data scan silently". No file in the tree was in that state; the fix
+  was preventative, and the note now says so.
+
 ## 1.3.0
 
 Clears the ten findings the second side-by-side comparison against
@@ -54,7 +85,9 @@ made that another file did not keep.
 - The freeze list omitted the attachments `/apply` copies into a packet, so a writing
   sample the user later replaced in `documents/` was unrecoverable.
 - `tests/support.py` treated any path containing a gitignored directory *name* as the
-  user's own, so a nested lookalike escaped every personal-data scan silently.
+  user's own, so a nested lookalike - `templates/documents/`, say - would have escaped
+  every personal-data scan silently. No file in the tree was in that state, so nothing
+  had been leaking; the fix is preventative.
 - `CONTRIBUTING.md` told contributors to probe a new board with a browser-header
   `curl` and said nothing about `robots.txt`.
 - `README.md`'s packet layout listed neither `prep_<stage>.md` nor `submitted/`, and

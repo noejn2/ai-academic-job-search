@@ -583,11 +583,34 @@ class ScrapeCanRunWhatItInstructsTests(unittest.TestCase):
 
 
 class SuiteIntegrityTests(unittest.TestCase):
-    def test_the_main_guard_is_the_last_thing_in_this_file(self):
-        # An append put four test classes below the guard. `python3 <file>`
-        # ran 35 tests, `unittest discover` ran 52, and CI stayed green.
-        text = read(Path(__file__)).rstrip()
-        self.assertTrue(text.endswith("unittest.main()"), "test classes sit below the main guard")
+    """`python3 tests/<file>.py` must run what `unittest discover` runs.
+
+    Appending a class below `if __name__ == "__main__"` leaves it dark on a
+    direct run while CI, which uses discover, stays green. This happened
+    twice: first to four classes here, then - after a version of this test
+    that only checked its own file - to ten in test_boards.py and five in
+    test_placeholders.py, which were the tests for the fixes being shipped.
+    So: check every test file, not this one.
+    """
+
+    def test_no_test_class_sits_below_the_main_guard(self):
+        checked = 0
+        for path in sorted(Path(__file__).parent.glob("test_*.py")):
+            text = path.read_text(encoding="utf-8")
+            # Anchored to column 0: this file's own docstring quotes the
+            # guard, and an unanchored search matched that instead.
+            guard = re.search(r'^if __name__ == "__main__":', text, re.M)
+            if not guard:
+                continue  # a file with no guard cannot strand anything
+            checked += 1
+            stranded = re.findall(r"^class (\w+)", text[guard.start():], re.M)
+            with self.subTest(file=path.name):
+                self.assertEqual(
+                    stranded, [],
+                    f"{path.name}: {stranded} sit below the main guard and are "
+                    "skipped by `python3 " + str(path.name) + "`",
+                )
+        self.assertGreater(checked, 1, "the glob found no sibling test files")
 
 
 GATE_VALUES = ["appointment", "non-academic", "country", "language", "eligibility"]
@@ -650,8 +673,31 @@ class RecencyWindowTests(unittest.TestCase):
     def test_first_seen_is_never_refreshed(self):
         # Refreshing it on every sweep would keep a posting alive forever and
         # make the window unenforceable.
-        body = flat(read(SKILLS / "job-scraper" / "SKILL.md"))
-        self.assertIn("the only field a later sweep must not touch", body)
+        body = flat(section(read(SKILLS / "job-scraper" / "SKILL.md"),
+                            "## Step 4: Deduplicate and store"))
+        self.assertIn("**`first_seen`**, because", body)
+        self.assertIn("keep a posting alive forever", body)
+
+    def test_a_retired_entry_is_listed_not_only_counted(self):
+        # The command drops these from the shortlist on its own judgement;
+        # only the user can say the window is wrong.
+        body = flat(section(read(COMMANDS / "rank.md"), "## Step 4: Present"))
+        self.assertIn("List what the sweep retired as `stale`", body)
+        self.assertIn("`--all`", body.split("retired as `stale`")[-1])
+
+    def test_a_sweep_does_not_overwrite_a_status_rank_wrote(self):
+        # /rank persists ranked|gated|expired|stale into the same entry.
+        # "Refresh everything else" resurrected all of them every sweep.
+        body = flat(section(read(SKILLS / "job-scraper" / "SKILL.md"),
+                            "## Step 4: Deduplicate and store"))
+        self.assertIn("never refreshed", body)
+        self.assertIn("`status` and `gate`, once anything but this command has written them",
+                      body)
+        self.assertIn("`/rank` owns every other value", body)
+
+    def test_the_deadline_check_is_not_called_a_gate(self):
+        body = flat(section(read(SKILLS / "job-scraper" / "SKILL.md"), "## Step 2: Gates"))
+        self.assertIn("Item 5 is a deadline check, not a gate", body)
 
     def test_stale_is_parsed_as_defensively_as_a_deadline_and_reversible(self):
         sweep = flat(section(read(COMMANDS / "rank.md"),

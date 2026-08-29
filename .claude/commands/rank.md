@@ -164,6 +164,11 @@ days**, so an unswept entry sits there a long time.
 - **Closing soon**: entries the Step 3b sweep found within 7 days, with their date.
 - Below the table, list the gated postings with their gate in one line each, so a
   wrong gate configuration is visible rather than silent.
+- **List what the sweep retired as `stale`**, one line each with the institution,
+  the role and how many days old `first_seen` is. A count in the header is not
+  enough: this command dropped those searches from the shortlist on its own
+  judgement, and the user is the only one who can say the window is wrong. Name
+  `--all` as the way back.
 - List anything scored `title-only` separately: those scores are weaker evidence.
 - If the sweep met any stored deadline it could not parse, say so once with the count
   and the board it came from.
