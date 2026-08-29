@@ -20,12 +20,16 @@ REMOVED_COMMANDS = [
     "/gmail-sync", "/notion-sync", "/html-report", "/upskill", "/expand",
     "/add-portal", "/add-template", "/scrape-for-jobs",
 ]
+#
+# tools/robots_check.py and 09-web-research.md were on this list and are back:
+# the fork had dropped the robots.txt gate while keeping the browser-header retry
+# it exists to authorise. They are restored deliberately - see CHANGELOG 1.1.0.
 REMOVED_PATHS = [
-    "salary_lookup.py", "tools/verify_pdf.py", "tools/robots_check.py",
+    "salary_lookup.py", "tools/verify_pdf.py",
     "tools/convert_salary_excel.py", "tools/check_upstream_updates.py",
     "tools/upstream_triage.py", "tools/check_framework_version.py",
     ".agents/", "cover_letters/", "company_research/", "upskill/",
-    "08-application-forms.md", "09-web-research.md", "05-cv-templates.md",
+    "08-application-forms.md", "05-cv-templates.md",
     "06-cover-letter-templates.md", "cv/main_example.tex",
 ]
 
@@ -48,6 +52,11 @@ RUNTIME_PATHS = {
     "job_posting.md",
     "references.md",
     "outcome.md",
+    # /outcome freezes the packet here when a row moves to `applied`, so
+    # /interview can prepare against what was actually submitted.
+    "submitted/",
+    "submitted/SUBMITTED.md",
+    "SUBMITTED.md",
     # The user's own masters in documents/statements/.
     "research_statement.tex",
     "teaching_statement.tex",

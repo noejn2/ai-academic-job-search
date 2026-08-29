@@ -67,3 +67,9 @@ jobs:
             test -s "$work/$file.pdf" || { echo "$file.tex produced no PDF"; exit 1; }
             echo "$file.tex compiled"
           done
+          # The cover letter's one-page rule (06-cover-letter.md) is written against
+          # this skeleton. A preamble change that pushes it to two pages must not
+          # pass green: the rule would then be false for every packet built from it.
+          pages=$(python3 tools/pdf_pages.py "$work/cover_letter.pdf")
+          test "$pages" = "1" || { echo "cover_letter.tex is $pages pages; the one-page rule requires 1"; exit 1; }
+          echo "cover_letter.tex is one page"

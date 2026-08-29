@@ -41,6 +41,7 @@ think tanks and NGOs are out of scope even when the research is identical.
 | `06-cover-letter.md` | Letter structure, length rule, verification |
 | `07-interview-prep.md` | Interview, flyout, job talk, teaching demo, STAR candidates |
 | `08-statements.md` | Assessment of your research and teaching statements, and where the sources live |
+| `09-web-research.md` | How to fetch a posting or department page, the robots.txt gate, the escalation order |
 
 ## Sources of truth
 

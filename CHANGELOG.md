@@ -1,5 +1,62 @@
 # Changelog
 
+## 1.1.0
+
+Restores safeguards that were lost when this workspace was cut down from
+[MadsLorentzen/ai-job-search](https://github.com/MadsLorentzen/ai-job-search), found
+by running both repositories side by side.
+
+**Added**
+
+- `tools/robots_check.py` and `09-web-research.md`, both ported back from upstream.
+  1.0.0 dropped the `robots.txt` gate while keeping the browser-header retry the gate
+  exists to authorise, which turned a documented exception into a standing
+  instruction to spoof a user agent past a 403. The retry now runs only when the
+  site's published policy allows the path, and it is written down in one file rather
+  than copied into two command files that could drift apart.
+- `/rank` Step 3b: an expiry sweep over already-ranked entries. Without it a closed
+  search stayed on the shortlist forever, and this workspace keeps entries for 120
+  days. Stored deadlines are parsed defensively; an absent or unparseable one is left
+  alone rather than guessed at.
+- `/outcome` freezes the packet into `submitted/` when a row moves to `applied`, and
+  `/interview` prepares from that copy. `/interview` already promised to match what
+  the committee read; nothing had been preserving it against a later re-draft.
+- `tools/pdf_pages.py`, a standard-library page counter, wired into `/apply` Step 6
+  and into CI. The LaTeX job asserted only that a PDF was non-empty, so a preamble
+  change that pushed the shipped cover letter to two pages passed green while
+  `06-cover-letter.md` still called one page a hard rule.
+- `.gitignore` rules for images. An academic cover letter often carries a scanned
+  signature and CVs in many countries carry a photograph.
+
+**Fixed**
+
+- `/scrape` runs its gates **before** the per-posting fetch, not after. Records the
+  appointment, non-academic, country or language gate was about to drop were being
+  fetched first, which on the AAEA board (no published descriptions) meant a request
+  per posting on the board rather than per surviving posting.
+- The country gate now says how to read `location`. JOE writes the country first
+  (`UNITED STATES New Jersey Princeton`), EconJobMarket last (`New York, United
+  States`); splitting on a comma silently dropped every JOE record.
+- `/apply` stops when a posting cannot be retrieved instead of drafting from the
+  title, which matters more here than upstream because `/rank` permits `title-only`
+  scoring.
+- `/rank` persists the `gate` reason it returns, as `/scrape` already did, and keeps
+  the posting URL in the shortlist it tells the user to pass to `/apply`.
+- `/outcome` sets the tracker `date` to the submission date when a row leaves
+  `drafted`. It kept `/apply`'s draft date, so the "awaiting response past 30 days"
+  count ran off a date the application was not sent on.
+- `03-writing-style.md` is cleared by `/reset`. Its "Patterns observed in past
+  applications" section is mined from the user's own letters, while `/reset` listed
+  the file as holding no personal data. The test that should have caught this
+  compared against a hardcoded tuple and searched the whole file; it now derives the
+  list from `/setup` Step 7 and checks the reset block specifically.
+- Two references to `/setup` "Path A" removed: this fork's `/setup` has no paths.
+- `SECURITY.md` states that the permission allowlist governs Bash only, that
+  `WebFetch`/`WebSearch` sit outside it, that the `curl` retry exists and is gated,
+  and that instruction-level defenses are not a sandbox.
+- `AGENTS.md` no longer carries a `framework_version` stamp; the mechanism that read
+  it was removed in 1.0.0.
+
 ## 1.0.0
 
 First release. An academic-only workspace derived from

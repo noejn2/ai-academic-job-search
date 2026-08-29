@@ -1,7 +1,3 @@
----
-framework_version: 1.0.0
----
-
 # Agent Instructions
 
 This file is for agent runtimes other than Claude Code (Codex, Cursor, Gemini CLI,

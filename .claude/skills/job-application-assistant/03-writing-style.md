@@ -43,5 +43,9 @@ emails, and the prose parts of a CV.
 
 ## Patterns observed in past applications
 
-`/setup` Path A appends here after reading the letters in your packets. Do not edit
-by hand.
+`/setup` Step 2 appends here after reading the cover letters in your packets: the
+recurring patterns, not the prose. Do not edit by hand.
+
+**This section is user-derived, so `/reset` clears it.** Anything written here comes
+from letters you wrote; a copy of this template handed to someone else must not carry
+your phrasing.

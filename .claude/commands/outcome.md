@@ -96,10 +96,33 @@ is rare and valuable; record it verbatim.
 
 Keep earlier content; append rather than overwrite. Never invent a date.
 
+### Freeze what was submitted
+
+**When the status moves to `applied`, snapshot the packet.** Copy every document the
+user sent - the `.tex` sources, their PDFs, `references.md`, `checklist.md` and
+`job_posting.md` - into `applications/<institution>_<role>/submitted/`, and write
+`submitted/SUBMITTED.md` naming the submission date and listing what went.
+
+This is the moment "what was submitted" becomes a fact. Before it, the packet is a
+draft that `/apply` may rewrite; after it, the committee has read a specific set of
+documents and `/interview` must prepare against those, not against a later re-draft.
+
+- **Never overwrite an existing `submitted/`.** If the user genuinely resubmitted,
+  ask, then write `submitted_<YYYY-MM-DD>/` beside it and say which is current.
+- Ask the user to confirm the packet on disk is what they actually sent. If they
+  edited anything outside this workspace, or the portal took a different file, record
+  that in `SUBMITTED.md` rather than freezing a copy that is quietly wrong.
+- If the folder holds no compiled PDFs, say so; freeze the sources and note that the
+  PDFs the committee read were not kept.
+
 ### Tracker row
 
-Update `status`, `notes` (append a dated line), and nothing else. Never restructure
-the CSV, reorder rows, or touch another row.
+Update `status`, `notes` (append a dated line), `contact_person` when the stage named
+one, and - **only on the move off `drafted`** - `date`, which becomes the actual
+submission date. `/apply` wrote the draft date into that column, so leaving it makes
+every follow-up calculation and the "awaiting response past 30 days" count in Step 5
+run off a date the application was not sent on. Nothing else changes. Never
+restructure the CSV, reorder rows, or touch another row.
 
 ---
 

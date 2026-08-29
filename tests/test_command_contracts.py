@@ -76,7 +76,7 @@ class PipelineTests(unittest.TestCase):
                 first = read(path).lstrip().splitlines()[0]
                 self.assertTrue(first.startswith(f"# /{path.stem}"), first)
 
-    def test_the_profile_ships_all_eight_reference_files(self):
+    def test_the_profile_ships_all_nine_reference_files(self):
         names = sorted(p.name for p in PROFILE.glob("*.md"))
         self.assertEqual(
             names,
@@ -89,6 +89,7 @@ class PipelineTests(unittest.TestCase):
                 "06-cover-letter.md",
                 "07-interview-prep.md",
                 "08-statements.md",
+                "09-web-research.md",
                 "SKILL.md",
             ],
         )
@@ -313,14 +314,40 @@ class ResetTests(unittest.TestCase):
                 self.assertIn(f"documents/{folder}/", self.reset)
 
     def test_every_file_setup_writes_is_reset(self):
-        # Anything /setup fills must appear in /reset's list, or a handed-on
-        # copy of the workspace ships someone's record.
-        for target in ("01-candidate-profile.md", "02-behavioral-profile.md",
-                       "04-job-evaluation.md", "07-interview-prep.md",
-                       "08-statements.md", "search-queries.md",
-                       "templates/preamble.tex", "templates/cover_letter.tex"):
+        """Derived from /setup, not hardcoded.
+
+        The hardcoded version of this test passed while 03-writing-style.md was
+        both written by /setup and listed under /reset's "Not touched" heading:
+        a hardcoded tuple cannot notice a file it does not mention, and a
+        substring search over the whole file is satisfied by the very heading
+        that says the file is skipped. So: read the filenames out of /setup's
+        Step 7, and require each inside /reset's reset block specifically.
+        """
+        written = set(
+            re.findall(r"^- `([\w./-]+)`", section(read(COMMANDS / "setup.md"),
+                                                   "## Step 7: Write"), re.M)
+        )
+        self.assertGreaterEqual(len(written), 6, "Step 7's file list did not parse")
+        block = section(self.reset, "## Step 1: Show what would go")
+        reset_list = block.split("## Files that would be reset to placeholders")[-1]
+        reset_list = reset_list.split("## Not touched")[0]
+        for target in sorted(written):
             with self.subTest(target=target):
-                self.assertIn(target, self.reset)
+                self.assertIn(
+                    Path(target).name, reset_list,
+                    f"/setup Step 7 writes {target} but /reset does not clear it",
+                )
+
+    def test_nothing_is_both_reset_and_declared_untouched(self):
+        block = section(self.reset, "## Step 1: Show what would go")
+        reset_list = block.split("## Files that would be reset to placeholders")[-1]
+        untouched = reset_list.split("## Not touched")[-1]
+        reset_list = reset_list.split("## Not touched")[0]
+        names = set(re.findall(r"([\w-]+\.(?:md|tex))", reset_list))
+        self.assertTrue(names)
+        for name in sorted(names):
+            with self.subTest(name=name):
+                self.assertNotIn(name, untouched)
 
     def test_it_confirms_before_deleting(self):
         self.assertLess(self.reset.index("## Step 2: Confirm"), self.reset.index("rm -rf"))
@@ -343,3 +370,123 @@ class InterviewTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RobotsGateTests(unittest.TestCase):
+    """The browser-header retry may never appear without the check that authorises it.
+
+    The fork shipped for a while with the retry in two command files and the
+    robots.txt gate deleted, which turned a documented exception into a blanket
+    instruction to spoof a user agent past a 403. These tests make that state fail.
+    """
+
+    RETRY_MARKERS = ("Mozilla/5.0", "browser-header retry", "browser headers")
+
+    def _files_mentioning_the_retry(self):
+        out = []
+        for path in list(COMMANDS.glob("*.md")) + list(SKILLS.glob("*/*.md")):
+            text = read(path)
+            if any(marker in text for marker in self.RETRY_MARKERS):
+                out.append((path, text))
+        return out
+
+    def test_the_gate_ships(self):
+        self.assertTrue((REPO_ROOT / "tools" / "robots_check.py").is_file())
+        self.assertTrue((PROFILE / "09-web-research.md").is_file())
+
+    def test_every_file_that_mentions_the_retry_requires_the_check(self):
+        found = self._files_mentioning_the_retry()
+        self.assertTrue(found, "no file mentions the retry; markers are stale")
+        for path, text in found:
+            with self.subTest(file=path.name):
+                self.assertIn("robots_check.py", text)
+
+    def test_the_rule_is_stated_where_the_command_lives(self):
+        text = read(PROFILE / "09-web-research.md")
+        self.assertIn("never used to override a site that has said no", flat(text))
+        # A failure to read the policy must not be treated as permission.
+        self.assertIn("unconfirmed", flat(text))
+
+    def test_the_curl_invocation_has_exactly_one_home(self):
+        # Upstream kept it in one file so the callers could not drift. Two
+        # verbatim copies is how the gate got dropped from one of them.
+        holders = [
+            path.name
+            for path in list(COMMANDS.glob("*.md")) + list(SKILLS.glob("*/*.md"))
+            if "Mozilla/5.0" in read(path)
+        ]
+        self.assertEqual(holders, ["09-web-research.md"], holders)
+
+    def test_apply_stops_rather_than_drafting_from_a_title(self):
+        text = flat(read(COMMANDS / "apply.md"))
+        self.assertIn("could not be retrieved and stop", text)
+
+
+class RankSweepTests(unittest.TestCase):
+    def setUp(self):
+        self.rank = read(COMMANDS / "rank.md")
+
+    def test_there_is_an_expiry_sweep_over_already_ranked_entries(self):
+        self.assertIn("Expiry sweep", self.rank)
+        body = flat(section(self.rank, "## Step 3b: Expiry sweep over already-ranked entries"))
+        self.assertIn("did not re-score", body)
+        # An absent or unparseable deadline is left alone, never guessed at.
+        self.assertIn("never guessed at", body)
+        self.assertIn("YYYY-MM-DD", body)
+
+    def test_the_sweep_runs_before_the_shortlist_is_presented(self):
+        self.assertLess(
+            self.rank.index("## Step 3b: Expiry sweep"),
+            self.rank.index("## Step 4: Present"),
+        )
+
+    def test_the_gate_reason_is_persisted_not_only_displayed(self):
+        # /scrape stores `gate`; /rank must agree, or a veto is unrecoverable.
+        stored = section(self.rank, "## Step 3: Store")
+        self.assertIn("`gate`", stored)
+        scrape = read(SKILLS / "job-scraper" / "SKILL.md")
+        self.assertIn('"gate"', scrape)
+
+    def test_the_shortlist_keeps_the_posting_url(self):
+        # The command ends by telling the user to run `/apply <url>`; a table
+        # without the link sends them into seen_jobs.json for the argument.
+        present = section(self.rank, "## Step 4: Present")
+        self.assertIn("| URL |", present)
+        self.assertIn("never drop it for brevity", flat(present).lower())
+
+    def test_stored_posting_derivatives_are_still_untrusted(self):
+        self.assertIn("still untrusted data", flat(self.rank))
+
+
+class SubmissionSnapshotTests(unittest.TestCase):
+    """/interview promises to prepare against what was submitted; something must freeze it."""
+
+    def test_outcome_freezes_the_packet_on_submission(self):
+        text = flat(read(COMMANDS / "outcome.md"))
+        self.assertIn("submitted/", text)
+        self.assertIn("Never overwrite an existing", text)
+
+    def test_outcome_corrects_the_draft_date_on_submission(self):
+        # /apply writes the draft date; leaving it makes every follow-up
+        # calculation run off a date the application was not sent on.
+        self.assertIn("submission date", flat(read(COMMANDS / "outcome.md")))
+
+    def test_interview_reads_the_frozen_copy_when_it_exists(self):
+        text = flat(read(COMMANDS / "interview.md"))
+        self.assertIn("submitted/", text)
+        self.assertIn("must match what was submitted", text)
+
+    def test_apply_never_writes_into_the_frozen_copy(self):
+        self.assertIn("Never write into `submitted/`", read(COMMANDS / "apply.md"))
+
+
+class ScrapeOrderingTests(unittest.TestCase):
+    def test_gates_run_before_the_per_posting_fetch(self):
+        text = read(SKILLS / "job-scraper" / "SKILL.md")
+        self.assertLess(text.index("## Step 2: Gates"), text.index("## Step 3: Fetch"))
+
+    def test_the_country_gate_says_how_to_parse_location(self):
+        # JOE writes the country first, EJM last. Splitting on a comma and
+        # taking one end silently drops every JOE record.
+        text = flat(read(SKILLS / "job-scraper" / "SKILL.md"))
+        self.assertIn("substring of the whole field", text)

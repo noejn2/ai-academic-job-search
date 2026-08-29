@@ -39,6 +39,8 @@ ALLOWED_PERMISSIONS = {
     "Skill(job-application-assistant)",
     "Skill(scrape)",
     "Bash(python3 tools/boards.py:*)",
+    "Bash(python3 tools/robots_check.py:*)",
+    "Bash(python3 tools/pdf_pages.py:*)",
     "Bash(pdflatex:*)",
 }
 
@@ -62,6 +64,10 @@ REQUIRED_IGNORE_RULES = [
     "**/job_scraper/seen_jobs.json",
     # A packet's compiled PDFs are the application itself.
     "*.pdf",
+    # A scanned signature on a cover letter, or a CV photograph.
+    "*.jpg",
+    "*.jpeg",
+    "*.png",
     ".env",
     ".env.*",
 ]

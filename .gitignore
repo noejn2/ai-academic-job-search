@@ -57,6 +57,16 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Personal photos and signatures. An academic cover letter often carries a scanned
+# signature, and CVs in many countries carry a photograph. documents/** and
+# applications/** already cover those folders; this catches one dropped at the repo
+# root, in templates/, or anywhere else it does not belong.
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.webp
+
 # Claude Code session files
 .claude/projects/
 skills-lock.json

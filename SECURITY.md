@@ -46,16 +46,33 @@ not prompt on every run:
 
 ```
 Skill(job-application-assistant), Skill(scrape),
-Bash(python3 tools/boards.py:*), Bash(pdflatex:*)
+Bash(python3 tools/boards.py:*), Bash(python3 tools/robots_check.py:*),
+Bash(python3 tools/pdf_pages.py:*), Bash(pdflatex:*)
 ```
 
 `tools/security_guards.py` holds the same list and fails when the two disagree, so
-widening it (`Bash(*)`, `Bash(curl:*)`) cannot pass review unnoticed. Nothing in this
-repository pre-approves a network client, a package manager or a shell wildcard.
+widening it (`Bash(*)`, `Bash(curl:*)`) cannot pass review unnoticed. The allowlist
+pre-approves no shell wildcard and no package manager.
+
+**The allowlist governs Bash commands only.** The agent's own `WebFetch` and
+`WebSearch` tools are outside its reach, which is exactly why the instruction-level
+rules above exist.
 
 ## Network access
 
 `tools/boards.py` makes one GET per board, to three fixed URLs, with a descriptive
-User-Agent and no credentials. It sends nothing about the user. Everything else on
-the network goes through the agent's own fetch and search tools, under the untrusted
-input rules above.
+User-Agent and no credentials. It sends nothing about the user.
+`tools/robots_check.py` fetches one `robots.txt` per host it is asked about.
+
+Everything else on the network goes through the agent's own fetch and search tools,
+under the untrusted input rules above. One case involves `curl`: when `WebFetch` is
+refused with a 403, `09-web-research.md` permits a single browser-header retry, and
+**only after `tools/robots_check.py` confirms the site's published policy allows that
+path.** A disallow for `*` or for `Claude-User`, or any failure to read the policy,
+blocks the retry. That command is not pre-approved in `settings.json`; it prompts.
+
+## What this is not
+
+Instruction-level defenses raise the bar; they are not a sandbox. If you run this
+workflow against boards or department sites you do not trust at all, review what the
+agent fetched and wrote before sending anything out.

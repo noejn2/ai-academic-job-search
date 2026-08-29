@@ -82,6 +82,11 @@ Then, from `documents/`:
 - **`diplomas/`** - official degree titles, institutions, dates.
 - **`applications/*/outcome.md`** - past results, for the calibration section of
   `04-job-evaluation.md`. Skip applications still in progress.
+- **`applications/*/cover_letter.tex`** - only where two or more letters show a
+  genuine recurring pattern: an opening move, a way of stating a gap, a closing
+  formulation. Write the **pattern** into the "Patterns observed in past
+  applications" section of `03-writing-style.md`, never the prose. A tailored letter
+  is an output, not a source; nothing factual is extracted from one.
 
 Cross-reference the documents against each other. If dates, titles or degree names
 disagree, list the conflicts and ask which is correct before writing. Never resolve a
@@ -188,6 +193,8 @@ leaving the rest visible:
 - `04-job-evaluation.md` - the strong/moderate/weak field lists
 - `07-interview-prep.md` - STAR **stubs** from real achievements. Never invent the
   situation, action or result; leave those lines empty for the user
+- `03-writing-style.md` - only the recurring letter patterns, appended to its
+  "Patterns observed in past applications" section. Leave the rules above it alone
 - `08-statements.md` - assessment, gaps, source paths
 - `.claude/skills/job-scraper/search-queries.md` - the search configuration
 - `templates/preamble.tex` and `templates/cover_letter.tex` - name and paper size

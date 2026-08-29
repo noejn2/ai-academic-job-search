@@ -18,11 +18,14 @@ Pass drafts to the reviewer inline rather than making it read them.
 
 ## Step 0: Read the posting
 
-- A URL: `WebFetch` it. On 403, a login wall, or an unrelated listing page, retry with
-  browser headers:
-  `curl -sL -A "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/537.36 Chrome/124 Safari/537.36" "<url>"`.
-  University HR portals commonly serve a browser but reject a plain client. If both
-  fail, search for the department's own posting page and prefer it over an aggregator.
+- A URL: follow the escalation order in `09-web-research.md` - `WebFetch`, then
+  `python3 tools/robots_check.py '<url>'` and the browser-header retry **only if it
+  exits 0**, then a search for the department's own posting page. The retry exists to
+  get past a bot-filtering firewall on a site whose `robots.txt` permits access; it
+  is never used to override a site that has said no.
+  **If all three fail, tell the user the posting could not be retrieved and stop.**
+  Never draft a packet from an institution name and a role title: there would be no
+  vacancy number, no required-document list and no named courses to build on.
 - A file in `documents/postings/`: read it as-is.
 - Pasted text: use it directly.
 
@@ -74,6 +77,13 @@ Ask: **"Build the packet for this position?"** Stop if the answer is no.
 Derive `<institution>_<role>` by the **Packet naming** rule in `documents/README.md`.
 Create `applications/<institution>_<role>/` if it does not exist; if it does, work in
 place and never create a second folder for the same search.
+
+**Never write into `submitted/`.** If the packet holds that folder, the application
+has already gone out and `/outcome` froze a copy of what the committee received. The
+drafts beside it stay editable - re-draft freely for a later deadline or after a
+review - but the frozen copy is the only thing `/interview` may prepare against, and
+this command does not touch it. If a re-draft is genuinely resubmitted, `/outcome`
+takes a fresh snapshot; nothing else may.
 
 Write two files immediately:
 
@@ -192,7 +202,9 @@ Twice per document, every document. One pass leaves page references and `lastpag
 footers wrong. If the master CV declares a different engine in a header comment, use
 that engine instead.
 
-Fix errors and recompile until clean, then **read every PDF** and check:
+Fix errors and recompile until clean. Get each page count from
+`python3 tools/pdf_pages.py <file>.pdf` rather than by eye, then **read every PDF**
+and check:
 
 - **CV**: compiles clean, no orphaned section heading, contact details current, no
   page limit applied

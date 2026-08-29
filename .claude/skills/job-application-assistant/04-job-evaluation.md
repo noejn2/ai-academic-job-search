@@ -131,5 +131,5 @@ source.
 
 ## Calibration from past applications
 
-`/setup` Path A appends here after reading `applications/*/outcome.md`. Do not edit
-by hand.
+`/setup` Step 2 appends here after reading `applications/*/outcome.md`. Do not edit
+by hand. `/reset` clears it: it is derived from your own search history.

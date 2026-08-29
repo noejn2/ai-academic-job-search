@@ -4,6 +4,8 @@
       "Skill(job-application-assistant)",
       "Skill(scrape)",
       "Bash(python3 tools/boards.py:*)",
+      "Bash(python3 tools/robots_check.py:*)",
+      "Bash(python3 tools/pdf_pages.py:*)",
       "Bash(pdflatex:*)"
     ]
   }

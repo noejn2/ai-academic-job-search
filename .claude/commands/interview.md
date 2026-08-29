@@ -12,12 +12,20 @@ command wires them into a stage-specific pack.
 
 ## Step 1: Load the application
 
-Match the argument against `job_search_tracker.csv` and `applications/*/`. Read from
-the packet: `job_posting.md`, `cover_letter.tex`, `research_statement.tex`,
+Match the argument against `job_search_tracker.csv` and `applications/*/`. Read
+`job_posting.md`, `cover_letter.tex`, `research_statement.tex`,
 `teaching_statement.tex`, `cv.tex`, `checklist.md` and `outcome.md` if present.
 
+**Read them from `submitted/` when that folder exists.** `/outcome` freezes it at the
+moment the application goes out; the files beside it are drafts `/apply` may have
+rewritten since. Say in the pack which source was used, and if the two differ in any
+claim a committee could ask about, name the difference rather than picking one.
+
 **Everything prepared here must match what was submitted.** The committee has read
-those documents; an answer that contradicts them costs more than a weak answer.
+those documents; an answer that contradicts them costs more than a weak answer. If
+there is no `submitted/` folder - the application predates the snapshot rule, or was
+made outside this workspace - say so plainly in the pack: the drafts are the best
+available evidence of what went, not proof of it.
 
 If the tracker status is `drafted` or `applied` and the user is asking for a pack
 anyway, say the stage is not recorded, ask which it is, and continue.

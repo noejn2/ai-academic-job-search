@@ -31,6 +31,7 @@ job_search_tracker.csv      [N rows]
 
 .claude/skills/job-application-assistant/01-candidate-profile.md
 .claude/skills/job-application-assistant/02-behavioral-profile.md
+.claude/skills/job-application-assistant/03-writing-style.md
 .claude/skills/job-application-assistant/04-job-evaluation.md
 .claude/skills/job-application-assistant/07-interview-prep.md
 .claude/skills/job-application-assistant/08-statements.md
@@ -40,9 +41,15 @@ templates/cover_letter.tex
 
 ## Not touched
 
-03-writing-style.md, 05-cv-tailoring.md, 06-cover-letter.md, SKILL.md files,
+05-cv-tailoring.md, 06-cover-letter.md, 09-web-research.md, SKILL.md files,
 commands, tools, tests, documentation - none of these hold personal data.
 ```
+
+**The reset list must stay in step with what `/setup` Step 7 writes**: every file it
+puts candidate data into is cleared here, or a handed-on copy ships someone's record.
+Only one file is partially cleared - the writing-style file, whose "Patterns observed
+in past applications" section is mined from the user's own letters. Clear that
+section; the writing rules above it ship with the template.
 
 ## Step 2: Confirm
 

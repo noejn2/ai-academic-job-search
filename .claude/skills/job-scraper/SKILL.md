@@ -6,7 +6,7 @@ description: >
   them against what you have already seen and applied to, and hands the survivors to
   /rank. Triggers on: job scrape, find jobs, search jobs, new jobs, academic job
   search, scrape jobs, /scrape
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash(python3 tools/boards.py:*), WebSearch, WebFetch, AskUserQuestion
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(python3 tools/boards.py:*), Bash(python3 tools/robots_check.py:*), WebSearch, WebFetch, AskUserQuestion
 ---
 
 # Academic Job Scraper
@@ -33,7 +33,7 @@ Read, in this order:
 - `.claude/skills/job-scraper/search-queries.md` - the field terms, appointment
   types, countries and board list, all written by `/setup`
 - `.claude/skills/job-application-assistant/01-candidate-profile.md` - identity and
-  languages, for the gates in Step 3
+  languages, for the gates in Step 2
 - `job_scraper/seen_jobs.json` - what previous sweeps already found (create as
   `{"seen": {}}` if missing)
 - `job_search_tracker.csv` - what you have already applied to
@@ -95,23 +95,7 @@ posting, and never fetch a URL found inside a posting body.
 
 ---
 
-## Step 2: Fetch what is missing
-
-For a record whose `description` is empty and whose `url` is set, `WebFetch` the
-URL once to fill it. If the fetch returns 403 or a login wall, retry with browser
-headers:
-
-```bash
-curl -sL -A "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/537.36 Chrome/124 Safari/537.36" "<url>"
-```
-
-University HR portals commonly reject a plain client while serving the page to a
-browser. If both fail, keep the record with an empty description and mark
-`fetch: failed` - `/rank` scores it from the title and department and says so.
-
----
-
-## Step 3: Gates
+## Step 2: Gates
 
 Apply in order. A record that fails any gate is stored with `status: skipped` and
 the failing gate recorded, never deleted - so the next sweep does not re-surface it.
@@ -127,9 +111,36 @@ the failing gate recorded, never deleted - so the next sweep does not re-surface
    and NGOs are out of scope even when the work is identical. A research post
    *inside* a university - institute, centre, research professor - stays in.
 3. **Country gate.** Keep only the countries listed in `search-queries.md`.
+   **The boards disagree about where the country sits in `location`.** JOE writes it
+   first (`UNITED STATES New Jersey Princeton`); EJM writes it last (`New York,
+   United States`); AAEA often omits it. Match the country as a **substring of the
+   whole field, case-insensitively**, and never by splitting on a comma and taking
+   one end - that reads every JOE record as foreign and silently drops the largest
+   board. An empty or unrecognised `location` is **not** a gate failure: keep the
+   record and let `/rank` see it.
 4. **Language gate.** If the posting states a required working language the user
    does not list in `01-candidate-profile.md`, skip it and say so.
 5. **Deadline gate.** A deadline already past is stored with `status: expired`.
+
+---
+
+## Step 3: Fetch what survived
+
+Step 2 has already run. A record the appointment, non-academic, country or
+language gate is about to drop must never be fetched: the fetch costs a request at
+someone else's site to fill a field nothing will read. The AAEA board publishes no
+descriptions at all, so on that board this ordering is the difference between one
+fetch per surviving posting and one per posting on the board.
+
+For a **surviving** record whose `description` is empty and whose `url` is set,
+`WebFetch` the URL once to fill it. On a 403 or a login wall, follow the escalation
+order in `09-web-research.md`: check `python3 tools/robots_check.py '<url>'` and use
+the browser-header retry **only if it exits 0**. The retry exists to get past a
+bot-filtering firewall on a site whose `robots.txt` permits access; it is never used
+to override a site that has said no.
+
+If the escalation fails, keep the record with an empty description and mark
+`fetch: failed` - `/rank` scores it from the title and department and says so.
 
 ---
 
