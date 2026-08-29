@@ -1,0 +1,9 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Working in your own copy? Read this first
+    url: https://github.com/noejn2/ai-academic-job-search/blob/main/SETUP.md#6-keep-it-private
+    about: >-
+      This tracker is public. If you cloned this repository directly rather
+      than using "Use this template", gh files issues here - run
+      `gh repo set-default <you>/<your-copy>` so your postings, referees and
+      fit evaluations stay in your own repo.

@@ -29,7 +29,11 @@ _IGNORED_DIRS = {"documents", "applications", "job_scraper", ".git", "__pycache_
 
 def is_ignored(path: Path) -> bool:
     relative = path.relative_to(REPO_ROOT)
-    if set(relative.parts) & _IGNORED_DIRS:
+    # Only the top-level directory counts. Matching any part meant a nested
+    # folder that merely shared a name - templates/documents/, say - was
+    # treated as the user's own and silently skipped by every privacy scan
+    # that reads shipped_files().
+    if relative.parts[0] in _IGNORED_DIRS:
         # documents/README.md and the .gitkeep markers are tracked: they are
         # the folder contract the template ships. Everything else there is the
         # user's own.

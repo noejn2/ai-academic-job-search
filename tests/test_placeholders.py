@@ -181,3 +181,48 @@ class NoPersonalDataTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ScanCoverageTests(unittest.TestCase):
+    """is_ignored matched an ignored directory name at any depth.
+
+    A nested folder that merely shared a name with a gitignored top-level one
+    was treated as the user's own, so every personal-data scan that reads
+    shipped_files() skipped it without saying so.
+    """
+
+    def test_a_nested_lookalike_directory_is_still_scanned(self):
+        import support
+        self.assertFalse(support.is_ignored(REPO_ROOT / "templates" / "documents" / "x.md"))
+        self.assertFalse(support.is_ignored(REPO_ROOT / "tools" / "applications" / "x.py"))
+
+    def test_the_real_personal_directories_are_still_skipped(self):
+        import support
+        for path in ("documents/cv/mine.tex", "applications/x_y/cover_letter.tex"):
+            with self.subTest(path=path):
+                self.assertTrue(support.is_ignored(REPO_ROOT / path))
+
+    def test_the_folder_contract_files_are_still_shipped(self):
+        import support
+        self.assertFalse(support.is_ignored(REPO_ROOT / "documents" / "README.md"))
+        self.assertFalse(support.is_ignored(REPO_ROOT / "documents" / "cv" / ".gitkeep"))
+
+
+class IssueTemplateTests(unittest.TestCase):
+    """This tracker is public; the things a user would paste into it are not."""
+
+    TEMPLATES_DIR = REPO_ROOT / ".github" / "ISSUE_TEMPLATE"
+
+    def test_the_templates_ship(self):
+        self.assertTrue((self.TEMPLATES_DIR / "bug-report.md").exists())
+        self.assertTrue((self.TEMPLATES_DIR / "config.yml").exists())
+
+    def test_the_bug_report_warns_before_the_first_field(self):
+        text = (self.TEMPLATES_DIR / "bug-report.md").read_text(encoding="utf-8")
+        warning, _, rest = text.partition("## What happened")
+        self.assertTrue(rest, "the template has no fields")
+        self.assertIn("PUBLIC", warning)
+        self.assertIn("gh repo set-default", warning)
+        for risk in ("referees", "posting", "tracker row"):
+            with self.subTest(risk=risk):
+                self.assertIn(risk, warning)
