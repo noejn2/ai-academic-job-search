@@ -368,9 +368,6 @@ class InterviewTests(unittest.TestCase):
         self.assertIn("must match what was submitted", flat(text))
 
 
-if __name__ == "__main__":
-    unittest.main()
-
 
 class RobotsGateTests(unittest.TestCase):
     """The browser-header retry may never appear without the check that authorises it.
@@ -486,7 +483,12 @@ class SubmissionSnapshotTests(unittest.TestCase):
     def test_outcome_corrects_the_draft_date_on_submission(self):
         # /apply writes the draft date; leaving it makes every follow-up
         # calculation run off a date the application was not sent on.
-        self.assertIn("submission date", flat(read(COMMANDS / "outcome.md")))
+        # Scoped to the tracker section: "submission date" also appears in the
+        # freeze paragraph above, which kept this test green once after the
+        # rule it is supposed to pin had been deleted outright.
+        body = flat(section(read(COMMANDS / "outcome.md"), "### Tracker row"))
+        self.assertIn("only on the move off `drafted`", body)
+        self.assertIn("submission date", body)
 
     def test_interview_reads_the_frozen_copy_when_it_exists(self):
         text = flat(read(COMMANDS / "interview.md"))
@@ -507,3 +509,58 @@ class ScrapeOrderingTests(unittest.TestCase):
         # taking one end silently drops every JOE record.
         text = flat(read(SKILLS / "job-scraper" / "SKILL.md"))
         self.assertIn("substring of the whole field", text)
+
+
+class ScrapeCanRunWhatItInstructsTests(unittest.TestCase):
+    """A skill that instructs a command its own frontmatter forbids cannot follow itself.
+
+    `/scrape` shipped for two commits telling the agent to run the browser-header
+    retry from an `allowed-tools` list holding no `curl` and no bare `Bash`.
+    """
+
+    RETRY = "browser-header retry"
+
+    def test_every_skill_that_instructs_the_retry_may_run_it(self):
+        found = False
+        for skill in sorted(SKILLS.glob("*/SKILL.md")):
+            _, frontmatter, body = read(skill).split("---", 2)
+            if self.RETRY not in body and "curl " not in body:
+                continue
+            found = True
+            allowed = re.search(r"^allowed-tools:(.*)$", frontmatter, re.M).group(1)
+            with self.subTest(skill=skill.parent.name):
+                self.assertTrue(
+                    "Bash(curl:" in allowed or re.search(r"\bBash\b(?!\()", allowed),
+                    f"instructs the retry but allowed-tools forbids it:{allowed}",
+                )
+        self.assertTrue(found, f"no skill mentions the {self.RETRY!r} any more")
+
+    def test_the_commands_that_instruct_the_retry_run_under_a_bash_grant(self):
+        # /apply is a command file, not a skill; its permissions come from
+        # job-application-assistant, which must keep a bare `Bash`.
+        commands = [c for c in COMMANDS.glob("*.md") if self.RETRY in read(c)]
+        self.assertTrue(commands, f"no command mentions the {self.RETRY!r} any more")
+        frontmatter = read(PROFILE / "SKILL.md").split("---", 2)[1]
+        allowed = re.search(r"^allowed-tools:(.*)$", frontmatter, re.M).group(1)
+        self.assertRegex(allowed, r"\bBash\b(?!\()")
+
+    def test_the_fetch_regates_what_it_just_filled(self):
+        # Gates moved ahead of the fetch, so for a board that publishes no
+        # description the appointment and language gates evaluated empty
+        # strings. Nothing re-gated afterwards.
+        body = flat(section(read(SKILLS / "job-scraper" / "SKILL.md"),
+                            "### Re-run the gates the fetch just made answerable"))
+        self.assertIn("An empty field is not a pass", body)
+        self.assertIn("run the appointment gate and the language gate again", body)
+
+
+class SuiteIntegrityTests(unittest.TestCase):
+    def test_the_main_guard_is_the_last_thing_in_this_file(self):
+        # An append put four test classes below the guard. `python3 <file>`
+        # ran 35 tests, `unittest discover` ran 52, and CI stayed green.
+        text = read(Path(__file__)).rstrip()
+        self.assertTrue(text.endswith("unittest.main()"), "test classes sit below the main guard")
+
+
+if __name__ == "__main__":
+    unittest.main()

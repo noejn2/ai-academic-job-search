@@ -6,7 +6,7 @@ description: >
   them against what you have already seen and applied to, and hands the survivors to
   /rank. Triggers on: job scrape, find jobs, search jobs, new jobs, academic job
   search, scrape jobs, /scrape
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash(python3 tools/boards.py:*), Bash(python3 tools/robots_check.py:*), WebSearch, WebFetch, AskUserQuestion
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(python3 tools/boards.py:*), Bash(python3 tools/robots_check.py:*), Bash(curl:*), WebSearch, WebFetch, AskUserQuestion
 ---
 
 # Academic Job Scraper
@@ -141,6 +141,24 @@ to override a site that has said no.
 
 If the escalation fails, keep the record with an empty description and mark
 `fetch: failed` - `/rank` scores it from the title and department and says so.
+
+### Re-run the gates the fetch just made answerable
+
+**An empty field is not a pass.** Two of the Step 2 gates read fields a
+description-less record does not carry yet, so for exactly the records this step
+fetches they ran against empty strings and let everything through. The AAEA board is
+the case that matters: it publishes no `description` and no `appointment`, so its
+records reach Step 3 having passed the appointment and language gates without either
+ever being evaluated.
+
+Once the fetch fills `description`, **run the appointment gate and the language gate
+again** on the filled record, and store a failure exactly as Step 2 does - `status:
+skipped` with the failing gate recorded. A record that still has nothing to gate on
+after a failed fetch stays in; `/rank` sees it with `fetch: failed` and says so.
+
+The country, non-academic and deadline gates are not re-run. They read `location`,
+the hiring unit and `deadline`, which come from the board listing and are already
+populated when Step 2 runs.
 
 ---
 

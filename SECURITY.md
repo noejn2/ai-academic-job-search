@@ -69,7 +69,11 @@ under the untrusted input rules above. One case involves `curl`: when `WebFetch`
 refused with a 403, `09-web-research.md` permits a single browser-header retry, and
 **only after `tools/robots_check.py` confirms the site's published policy allows that
 path.** A disallow for `*` or for `Claude-User`, or any failure to read the policy,
-blocks the retry. That command is not pre-approved in `settings.json`; it prompts.
+blocks the retry. That command is not pre-approved in `settings.json`; it prompts. The two skills
+that may reach it declare it in their own `allowed-tools` - `job-application-assistant`
+through a bare `Bash`, `job-scraper` through `Bash(curl:*)` - but a skill's
+`allowed-tools` is a capability declaration, not an approval. `settings.json` is the
+only list that suppresses the prompt.
 
 ## What this is not
 
