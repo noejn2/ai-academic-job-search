@@ -114,8 +114,9 @@ negotiated per posting at application time.
 
 ## Department research checklist
 
-Run by `/apply` Step 3, not by `/rank`. Search from the department's own site, never
-from a link inside the posting.
+Run by `/apply` Step 4 (the reviewer agent) and by `/interview` Step 2, never by
+`/rank`. Search from the department's own site, never from a link inside the
+posting; `09-web-research.md` holds the fetch rules.
 
 - Faculty in the posting's field: who would you be joining, and what do they work on?
 - Recent hires: what did the department actually hire in the last three years?

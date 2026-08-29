@@ -390,16 +390,33 @@ class RobotsGateTests(unittest.TestCase):
                 out.append((path, text))
         return out
 
+    # The exact command, not the bare filename. Asserting on "robots_check.py"
+    # alone passes on a file that only mentions tests/test_robots_check.py in
+    # prose - a mutation that replaced the real invocation went undetected.
+    INVOCATION = "python3 tools/robots_check.py"
+
     def test_the_gate_ships(self):
         self.assertTrue((REPO_ROOT / "tools" / "robots_check.py").is_file())
         self.assertTrue((PROFILE / "09-web-research.md").is_file())
+
+    def test_the_invocation_names_a_tool_that_exists(self):
+        text = read(PROFILE / "09-web-research.md")
+        self.assertIn(self.INVOCATION, text)
+        for match in re.finditer(r"python3 (tools/[\w./-]+\.py)", text):
+            with self.subTest(tool=match.group(1)):
+                self.assertTrue((REPO_ROOT / match.group(1)).is_file())
 
     def test_every_file_that_mentions_the_retry_requires_the_check(self):
         found = self._files_mentioning_the_retry()
         self.assertTrue(found, "no file mentions the retry; markers are stale")
         for path, text in found:
             with self.subTest(file=path.name):
-                self.assertIn("robots_check.py", text)
+                # Either it runs the check itself, or it defers to the one file
+                # that does. Nothing may describe the retry without one or the other.
+                self.assertTrue(
+                    self.INVOCATION in text or "09-web-research.md" in text,
+                    f"{path.name} describes the retry without gating it",
+                )
 
     def test_the_rule_is_stated_where_the_command_lives(self):
         text = read(PROFILE / "09-web-research.md")
