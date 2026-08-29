@@ -12,6 +12,19 @@ two use the same rubric; `/apply` adds department research and is authoritative.
 A posting failing any gate is not scored. Report which gate fired; never soften a
 gate into a low score.
 
+**The gate names are a shared vocabulary, written here once.** `/scrape` stores the
+gate that dropped a record and `/rank` stores the gate that vetoed a score, in the
+same `gate` field of the same entry, so the two must not invent separate words for
+the same thing. The permitted values, lowercase, are exactly:
+
+`appointment`, `non-academic`, `country`, `language`, `eligibility`
+
+Not every gate fires in both commands - `/scrape` cannot judge `eligibility` before
+the posting text is fetched, and `/rank` does not re-run `non-academic` on a record
+`/scrape` already dropped - but neither command may write a value outside this list.
+A past deadline is **not** a gate: it sets `status: expired` and leaves `gate` empty,
+because a search that closed was never a mismatch.
+
 ### 1. Appointment gate
 The appointment types in `.claude/skills/job-scraper/search-queries.md` are the ones
 in scope. A posting outside them is out, however good the fit.

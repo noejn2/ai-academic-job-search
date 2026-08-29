@@ -590,5 +590,111 @@ class SuiteIntegrityTests(unittest.TestCase):
         self.assertTrue(text.endswith("unittest.main()"), "test classes sit below the main guard")
 
 
+GATE_VALUES = ["appointment", "non-academic", "country", "language", "eligibility"]
+
+
+class GateVocabularyTests(unittest.TestCase):
+    """/scrape and /rank write the same `gate` field of the same entry."""
+
+    def test_the_rubric_defines_the_shared_vocabulary(self):
+        body = flat(section(read(PROFILE / "04-job-evaluation.md"), "## Gates - run before scoring"))
+        self.assertIn("shared vocabulary", body)
+        for value in GATE_VALUES:
+            with self.subTest(value=value):
+                self.assertIn(f"`{value}`", body)
+
+    def test_a_past_deadline_is_a_status_not_a_gate(self):
+        # A search that closed was never a mismatch; gating it loses that.
+        body = flat(section(read(PROFILE / "04-job-evaluation.md"), "## Gates - run before scoring"))
+        self.assertIn("A past deadline is **not** a gate", body)
+
+    def test_both_writers_point_at_the_one_list(self):
+        for path in (SKILLS / "job-scraper" / "SKILL.md", COMMANDS / "rank.md"):
+            with self.subTest(file=path.name):
+                self.assertIn("04-job-evaluation.md", read(path))
+                self.assertIn("same `gate` field", flat(read(path)))
+
+
+class RankFetchTests(unittest.TestCase):
+    """/rank fetched every posting on every run, ungated."""
+
+    def test_rank_follows_the_web_research_escalation(self):
+        body = flat(section(read(COMMANDS / "rank.md"), "## Step 1: Load"))
+        self.assertIn("09-web-research.md", body)
+        self.assertIn("python3 tools/robots_check.py", body)
+        self.assertIn("only if it exits 0", body)
+
+    def test_rank_does_not_refetch_what_it_already_scored(self):
+        body = flat(section(read(COMMANDS / "rank.md"), "## Step 1: Load"))
+        self.assertIn("is not re-fetched unless `--all` was passed", body)
+
+    def test_the_claim_that_rank_follows_the_file_is_true(self):
+        # 09-web-research.md names /rank as a follower; that has to be honoured
+        # somewhere in /rank, or the claim is decoration.
+        self.assertIn("`/rank`", read(PROFILE / "09-web-research.md"))
+        self.assertIn("09-web-research.md", read(COMMANDS / "rank.md"))
+
+
+class RecencyWindowTests(unittest.TestCase):
+    """A documented 120-day window that nothing enforced."""
+
+    def test_the_documented_window_is_implemented(self):
+        documented = flat(read(SKILLS / "job-scraper" / "search-queries.md"))
+        self.assertIn("120 days", documented)
+        sweep = flat(section(read(COMMANDS / "rank.md"),
+                             "## Step 3b: Expiry sweep over already-ranked entries"))
+        self.assertIn("120", sweep)
+        self.assertIn("first_seen", sweep)
+        self.assertIn("`status: stale`", sweep)
+
+    def test_first_seen_is_never_refreshed(self):
+        # Refreshing it on every sweep would keep a posting alive forever and
+        # make the window unenforceable.
+        body = flat(read(SKILLS / "job-scraper" / "SKILL.md"))
+        self.assertIn("the only field a later sweep must not touch", body)
+
+    def test_stale_is_parsed_as_defensively_as_a_deadline_and_reversible(self):
+        sweep = flat(section(read(COMMANDS / "rank.md"),
+                             "## Step 3b: Expiry sweep over already-ranked entries"))
+        self.assertIn("not `YYYY-MM-DD` is left alone", sweep)
+        self.assertIn("`stale`", sweep.split("reversible")[-1])
+
+
+class FrozenCopyTests(unittest.TestCase):
+    """/outcome wrote submitted_<date>/ and nothing ever read it."""
+
+    def test_interview_reads_the_latest_frozen_copy(self):
+        body = flat(section(read(COMMANDS / "interview.md"), "## Step 1: Load the application"))
+        self.assertIn("submitted_<YYYY-MM-DD>/", body)
+        self.assertIn("submitted*/", body)
+        self.assertIn("latest", body)
+
+    def test_apply_protects_every_frozen_copy_not_only_the_first(self):
+        body = flat(section(read(COMMANDS / "apply.md"), "## Step 2: Create the packet"))
+        self.assertIn("submitted_<YYYY-MM-DD>/", body)
+
+    def test_the_freeze_takes_the_attachments_too(self):
+        # A writing sample the user later replaces in documents/ is otherwise
+        # unrecoverable, and the committee read it.
+        body = flat(section(read(COMMANDS / "outcome.md"), "### Freeze what was submitted"))
+        for attachment in ("job market paper", "writing sample", "transcripts"):
+            with self.subTest(attachment=attachment):
+                self.assertIn(attachment, body)
+        self.assertIn("Copy the files, do not link to `documents/`", body)
+
+
+class DocumentedLayoutTests(unittest.TestCase):
+    def test_the_readme_layout_lists_what_the_pipeline_writes(self):
+        layout = read(REPO_ROOT / "README.md")
+        for entry in ("START_HERE.txt", "prep_<stage>.md", "submitted/", "outcome.md"):
+            with self.subTest(entry=entry):
+                self.assertIn(entry, layout)
+
+    def test_agents_md_counts_the_profile_files_that_exist(self):
+        shipped = sorted(p.name for p in PROFILE.glob("0*.md"))
+        last = shipped[-1].split("-")[0]
+        self.assertIn(f"`01` to `{last}`", read(REPO_ROOT / "AGENTS.md"))
+
+
 if __name__ == "__main__":
     unittest.main()

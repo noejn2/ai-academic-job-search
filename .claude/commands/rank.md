@@ -34,8 +34,21 @@ If there are no `new` postings, say so and suggest `/scrape`.
   courses the user can teach. Without this file the teaching dimension is guesswork;
   if it still holds placeholders, say so and score teaching as unknown.
 
-If a posting has no description stored, `WebFetch` its URL now. If that fails, score
-it from the title and department and mark it `evidence: title-only`.
+**`seen_jobs.json` never stores a `description`** - `/scrape` Step 4 says so
+explicitly, because it would bloat the state file. So "no description stored" is
+every posting, every run, and an unqualified `WebFetch` here means re-fetching the
+whole shortlist at somebody else's expense on each invocation.
+
+- Fetch only what this run will actually score: a posting already carrying a stored
+  `verdict` is not re-fetched unless `--all` was passed.
+- **Follow `09-web-research.md`** - `WebFetch`, then `python3 tools/robots_check.py
+  '<url>'` and the browser-header retry **only if it exits 0**, then a search for the
+  department's own page. That file says `/rank` follows it; this is where it does.
+- If the escalation fails, score from the title and department and mark
+  `evidence: title-only`. Never draft a score from an invented reading of the post.
+
+**Persist the gate name from the shared list in `04-job-evaluation.md`.** `/scrape`
+writes into the same `gate` field; the two must not use different words.
 
 ---
 
@@ -57,6 +70,9 @@ Each agent returns JSON, one object per posting:
  "evidence": "full-text|title-only"}
 ```
 
+An agent never returns `stale`: that status is written by the Step 3b sweep from
+`first_seen`, which an agent scoring one posting cannot see.
+
 Rules the agents follow:
 
 - `overall = 0.50*research + 0.30*teaching + 0.20*career`, rounded to a whole number.
@@ -74,7 +90,7 @@ Rules the agents follow:
 
 Write the scores back into `job_scraper/seen_jobs.json` for each posting: `overall`,
 `scores`, `verdict`, `gate`, `strengths`, `gaps`, `courses_named`,
-`documents_required`, `evidence`, and `status: ranked | expired | gated`.
+`documents_required`, `evidence`, and `status: ranked | expired | gated | stale`.
 
 **Persist `gate` whenever one fired.** A veto is as worth storing as a score: without
 it, nothing later - a re-read of `seen_jobs.json`, a debugging session, the user
@@ -115,9 +131,16 @@ days**, so an unswept entry sits there a long time.
   `DD.MM.YYYY` and free-text review dates into this field.
 - **A rolling search is not expired by its own review date.** Where the posting says
   review begins on a date but the search stays open, the sweep leaves it `ranked`.
+- **Retire what has gone stale.** `search-queries.md` documents a 120-day recency
+  window; nothing was enforcing it, so the claim two paragraphs above was true of no
+  code. An entry whose `first_seen` is more than **120 days** old, that has no tracker
+  row and is not already `expired`, is dropped from the report and stored with
+  `status: stale`. It stays in `seen_jobs.json` so the next sweep does not re-surface
+  it as new. Parse `first_seen` exactly as defensively as `deadline`: a value that is
+  not `YYYY-MM-DD` is left alone.
 - The sweep is reversible: `--all` re-scores entries of any status including
-  `expired`, so a search it retired can be revived by a later run that finds the
-  posting live. That reversibility is what makes an automatic status change
+  `expired` and `stale`, so a search it retired can be revived by a later run that
+  finds the posting live. That reversibility is what makes an automatic status change
   acceptable here at all.
 
 ---
@@ -125,7 +148,7 @@ days**, so an unswept entry sits there a long time.
 ## Step 4: Present
 
 ```
-## Shortlist - <N> ranked, <M> gated, <K> expired
+## Shortlist - <N> ranked, <M> gated, <K> expired, <S> stale
 
 | # | Score | Deadline | Institution | Department | Role | Appointment | Why | URL |
 |---|---|---|---|---|---|---|---|---|

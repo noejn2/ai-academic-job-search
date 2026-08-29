@@ -100,6 +100,11 @@ posting, and never fetch a URL found inside a posting body.
 Apply in order. A record that fails any gate is stored with `status: skipped` and
 the failing gate recorded, never deleted - so the next sweep does not re-surface it.
 
+**Write the gate name from the shared list in `04-job-evaluation.md`** - `appointment`,
+`non-academic`, `country`, `language`, `eligibility` - and nothing else. `/rank` stores
+its own vetoes in the same `gate` field of the same entry; a second vocabulary here
+makes the field unreadable by whichever command did not write it.
+
 1. **Appointment gate.** `search-queries.md` lists the appointment types the user
    wants. Drop anything outside that set: a postdoc posting for a user who asked
    only for tenure-track, a "Research Assistant" or "Pre-doctoral" post for anyone.
@@ -120,7 +125,8 @@ the failing gate recorded, never deleted - so the next sweep does not re-surface
    record and let `/rank` see it.
 4. **Language gate.** If the posting states a required working language the user
    does not list in `01-candidate-profile.md`, skip it and say so.
-5. **Deadline gate.** A deadline already past is stored with `status: expired`.
+5. **Deadline.** A deadline already past is stored with `status: expired` and an
+   empty `gate`. A closed search is not a mismatch, so it is not gated.
 
 ---
 
@@ -173,12 +179,18 @@ Write every record - new, skipped and expired - to `job_scraper/seen_jobs.json`:
 {"seen": {"<url>": {"id": "", "board": "", "title": "", "institution": "",
   "department": "", "location": "", "url": "", "posted": "", "deadline": "",
   "appointment": "", "field": "", "first_seen": "YYYY-MM-DD",
-  "status": "new|skipped|expired", "gate": "", "fetch": ""}}}
+  "status": "new|skipped|expired|stale", "gate": "", "fetch": ""}}}
 ```
 
 Keep `first_seen` from the earlier sweep when the record already exists; refresh
-everything else. Never store the `description` here - it belongs in the packet
-archive `/apply` writes, and it would bloat the state file past usefulness.
+everything else. `first_seen` is the only field a later sweep must not touch: it is
+what `/rank`'s 120-day recency sweep measures against, and refreshing it would keep a
+posting alive forever. `stale` is written by that sweep, never here.
+
+Never store the `description` here - it belongs in the packet archive `/apply`
+writes, and it would bloat the state file past usefulness. `/rank` therefore fetches
+each posting it scores; see its Step 1 for how, and why it does not re-fetch what it
+has already scored.
 
 ---
 

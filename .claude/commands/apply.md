@@ -78,12 +78,13 @@ Derive `<institution>_<role>` by the **Packet naming** rule in `documents/README
 Create `applications/<institution>_<role>/` if it does not exist; if it does, work in
 place and never create a second folder for the same search.
 
-**Never write into `submitted/`.** If the packet holds that folder, the application
-has already gone out and `/outcome` froze a copy of what the committee received. The
+**Never write into `submitted/`, or into any `submitted_<YYYY-MM-DD>/` beside it.**
+If the packet holds one of those folders, the application has already gone out and
+`/outcome` froze a copy of what the committee received. The
 drafts beside it stay editable - re-draft freely for a later deadline or after a
 review - but the frozen copy is the only thing `/interview` may prepare against, and
 this command does not touch it. If a re-draft is genuinely resubmitted, `/outcome`
-takes a fresh snapshot; nothing else may.
+takes a fresh snapshot into a new dated folder; nothing else may.
 
 Write two files immediately:
 

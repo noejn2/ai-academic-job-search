@@ -20,7 +20,7 @@ commands can follow any of them by reading the file:
 `setup` -> `scrape` -> `rank` -> `apply` -> `outcome` -> `interview`, plus `reset`.
 
 The profile they read and write is in
-`.claude/skills/job-application-assistant/` (files `01` to `08`), and the search
+`.claude/skills/job-application-assistant/` (files `01` to `09`), and the search
 configuration is in `.claude/skills/job-scraper/search-queries.md`.
 
 ## Non-negotiable rules

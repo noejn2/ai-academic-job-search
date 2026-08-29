@@ -99,9 +99,15 @@ Keep earlier content; append rather than overwrite. Never invent a date.
 ### Freeze what was submitted
 
 **When the status moves to `applied`, snapshot the packet.** Copy every document the
-user sent - the `.tex` sources, their PDFs, `references.md`, `checklist.md` and
-`job_posting.md` - into `applications/<institution>_<role>/submitted/`, and write
+user sent into `applications/<institution>_<role>/submitted/`, and write
 `submitted/SUBMITTED.md` naming the submission date and listing what went.
+
+Everything means everything: the `.tex` sources and their PDFs, `references.md`,
+`checklist.md`, `job_posting.md`, `START_HERE.txt`, **and the attachments `/apply`
+Step 3 copied in** - the job market paper, the writing sample, the transcripts, the
+teaching evaluations. Those are documents a committee read and can ask about, and a
+writing sample the user later replaces in `documents/` is then unrecoverable. Copy
+the files, do not link to `documents/`.
 
 This is the moment "what was submitted" becomes a fact. Before it, the packet is a
 draft that `/apply` may rewrite; after it, the committee has read a specific set of

@@ -16,10 +16,17 @@ Match the argument against `job_search_tracker.csv` and `applications/*/`. Read
 `job_posting.md`, `cover_letter.tex`, `research_statement.tex`,
 `teaching_statement.tex`, `cv.tex`, `checklist.md` and `outcome.md` if present.
 
-**Read them from `submitted/` when that folder exists.** `/outcome` freezes it at the
-moment the application goes out; the files beside it are drafts `/apply` may have
-rewritten since. Say in the pack which source was used, and if the two differ in any
-claim a committee could ask about, name the difference rather than picking one.
+**Read them from the frozen copy when one exists.** `/outcome` writes `submitted/`
+at the moment the application goes out; the files beside it are drafts `/apply` may
+have rewritten since. Say in the pack which source was used, and if the two differ in
+any claim a committee could ask about, name the difference rather than picking one.
+
+**A resubmitted search has more than one frozen copy.** `/outcome` writes
+`submitted_<YYYY-MM-DD>/` beside `submitted/` when the user genuinely resubmits, so
+glob `submitted*/` and prepare against the **latest** - the dated folders sort by
+name, and a bare `submitted/` is the first submission. Name the folder you used in
+the pack. Preparing against the first packet when the committee read the second is
+the failure this whole mechanism exists to prevent.
 
 **Everything prepared here must match what was submitted.** The committee has read
 those documents; an answer that contradicts them costs more than a weak answer. If

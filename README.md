@@ -82,7 +82,10 @@ applications/<institution>_<role>/
 ├── research_statement.*    your master statement, tailored to this department
 ├── teaching_statement.*    same, and built around the courses the posting names
 ├── references.md           your referees, in the order the portal asks for
-└── outcome.md              written later by /outcome
+├── outcome.md              written later by /outcome
+├── prep_<stage>.md         written later by /interview, per stage
+└── submitted/              written by /outcome when the row moves to applied:
+                            a frozen copy of exactly what the committee received
 ```
 
 Everything compiles with `pdflatex` run twice. Nothing is invented: every claim

@@ -342,9 +342,17 @@ class RetryTests(unittest.TestCase):
         response.__exit__.return_value = False
         return response
 
-    @staticmethod
-    def _http(code):
-        return urllib.error.HTTPError("http://b", code, "busy", email.message.Message(), None)
+    def setUp(self):
+        self._errors = []
+
+    def tearDown(self):
+        for error in self._errors:
+            error.close()  # HTTPError holds a tempfile; unclosed it warns
+
+    def _http(self, code):
+        error = urllib.error.HTTPError("http://b", code, "busy", email.message.Message(), None)
+        self._errors.append(error)
+        return error
 
     def test_a_transient_status_is_retried_then_succeeds(self):
         fake, calls = self._fetch_returning([self._http(503), self._ok()])
