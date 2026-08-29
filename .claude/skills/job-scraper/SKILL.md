@@ -102,6 +102,13 @@ Apply in order. A record that fails one of gates 1 to 4 is stored with
 does not re-surface it. Item 5 is a deadline check, not a gate: it is listed here
 because it runs in the same pass, and it stores a different status.
 
+**A gate failure overwrites whatever status the record already had**, including one
+`/rank` wrote. Step 4 otherwise leaves `/rank`'s statuses alone, and this is the one
+exception: the gates encode what the user is willing to apply for, so a posting that
+stops matching a narrowed `search-queries.md` must leave the shortlist even if it was
+already scored. The reverse holds too - a widened configuration lets a `skipped`
+record back in as `new`.
+
 **Write the gate name from the shared list in `04-job-evaluation.md`** - `appointment`,
 `non-academic`, `country`, `language`, `eligibility` - and nothing else. `/rank` stores
 its own vetoes in the same `gate` field of the same entry; a second vocabulary here
@@ -175,7 +182,8 @@ populated when Step 2 runs.
 A record is **new** when its `url` is absent from `seen_jobs.json` **and** no
 tracker row matches its institution and role case-insensitively.
 
-Write every record - new, skipped and expired - to `job_scraper/seen_jobs.json`:
+Write every record to `job_scraper/seen_jobs.json`, whatever this sweep decided
+about it:
 
 ```json
 {"seen": {"<url>": {"id": "", "board": "", "title": "", "institution": "",
@@ -185,23 +193,22 @@ Write every record - new, skipped and expired - to `job_scraper/seen_jobs.json`:
 ```
 
 When the record already exists, refresh what the **board** publishes - title,
-institution, department, location, deadline, appointment, field - and leave
-everything a later command decided alone. A sweep reports what the boards say; it
-does not overrule a judgement already made about a posting.
+institution, department, location, deadline, appointment, field - and leave what a
+later command decided alone, with the single exception named below. A sweep reports
+what the boards say; it does not overrule a judgement already made about a posting
+unless the user's own configuration now excludes it.
 
 Two groups are never refreshed:
 
 - **`first_seen`**, because `/rank`'s 120-day recency sweep measures against it.
   Refreshing it on every sweep would keep a posting alive forever.
-- **`status` and `gate`, once anything but this command has written them.** A
-  posting `/rank` has scored is `ranked`, `gated`, `expired` or `stale`, and
-  rewriting it to `new` here re-surfaces a search the user already triaged, un-does
-  the expiry sweep, and makes the 120-day window unable to close at all. `/scrape`
-  writes `status` on **first sight** and when its own gates fire; `/rank` owns every
-  other value, and `--all` is how a user revives one.
-
-`skipped` is this command's own, so a record it gated may be re-gated on a later
-sweep - a widened `search-queries.md` should let a posting back in.
+- **`status` and `gate`, once `/rank` has written them** - unless a Step 2 gate
+  fired on this sweep. A posting `/rank` has scored is `ranked`, `gated`, `expired`
+  or `stale`, and quietly rewriting it to `new` re-surfaces a search the user already
+  triaged, un-does the expiry sweep, and makes the 120-day window unable to close at
+  all. So `/scrape` writes `status` in exactly two cases: on **first sight**, and
+  when one of its own gates fires (Step 2, which says the same thing from the other
+  side). Every other value is `/rank`'s, and `--all` is how a user revives one.
 
 Never store the `description` here - it belongs in the packet archive `/apply`
 writes, and it would bloat the state file past usefulness. `/rank` therefore fetches

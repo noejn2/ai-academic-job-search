@@ -198,6 +198,12 @@ class ScanCoverageTests(unittest.TestCase):
             with self.subTest(path=path):
                 self.assertTrue(support.is_ignored(REPO_ROOT / path))
 
+    def test_a_directory_argument_does_not_crash(self):
+        # relative_to(REPO_ROOT) of the root itself has no parts; indexing
+        # part[0] raised IndexError where the old code returned False.
+        import support
+        self.assertFalse(support.is_ignored(REPO_ROOT))
+
     def test_the_folder_contract_files_are_still_shipped(self):
         import support
         self.assertFalse(support.is_ignored(REPO_ROOT / "documents" / "README.md"))

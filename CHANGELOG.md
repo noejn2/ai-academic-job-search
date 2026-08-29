@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.3.2
+
+Fixes what 1.3.1 introduced. Every item here is damage from the previous repair,
+found by re-running the comparison immediately after shipping it.
+
+**Fixed**
+
+- The stranded-test-class check matched the guard with a regex that wanted double
+  quotes, so a file written `if __name__ == '__main__':` read as having no guard at
+  all and its stranded classes went unreported - the silent direction, in the check
+  written to stop exactly this. It now parses the file and asks the syntax tree,
+  matching on the `__name__` reference rather than on the literal, and two tests
+  pin that both quotings are recognised.
+- `/scrape` Step 2 said a gate failure always stores `status: skipped`, while Step 4
+  said a status `/rank` wrote is never touched. Both were unqualified, so a posting
+  that stopped matching a narrowed `search-queries.md` after `/rank` had scored it
+  had no defined outcome. A gate failure now wins, stated on both sides: the gates
+  encode what the user will apply for, so a posting that stops matching must leave
+  the shortlist even if it was already scored.
+- `is_ignored()` raised `IndexError` on a path with no parts - the repository root
+  itself - where the code it replaced returned `False`. Nothing calls it that way
+  today; it was a working path turned into a crash.
+
 ## 1.3.1
 
 Fixes four regressions 1.3.0 introduced, found by re-running the side-by-side

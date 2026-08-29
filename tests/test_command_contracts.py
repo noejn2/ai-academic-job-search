@@ -8,6 +8,7 @@ copy drifts, nothing crashes - the workspace just starts producing subtly wrong
 output. These tests pin the strings that must match.
 """
 
+import ast
 import re
 import unittest
 from pathlib import Path
@@ -585,32 +586,76 @@ class ScrapeCanRunWhatItInstructsTests(unittest.TestCase):
 class SuiteIntegrityTests(unittest.TestCase):
     """`python3 tests/<file>.py` must run what `unittest discover` runs.
 
-    Appending a class below `if __name__ == "__main__"` leaves it dark on a
-    direct run while CI, which uses discover, stays green. This happened
-    twice: first to four classes here, then - after a version of this test
-    that only checked its own file - to ten in test_boards.py and five in
-    test_placeholders.py, which were the tests for the fixes being shipped.
-    So: check every test file, not this one.
+    A class appended below `if __name__ == "__main__"` is dark on a direct run
+    while CI, which uses discover, stays green. This has shipped three times:
+    four classes here; then ten in test_boards.py and five in
+    test_placeholders.py, after a version of this test that checked only its
+    own file; then a version whose regex wanted double quotes and read a
+    single-quoted guard as no guard at all - the silent direction.
+
+    So: no regex. Parse the file and ask the syntax tree.
     """
+
+    @staticmethod
+    def _guard_line(tree):
+        """Line of the last top-level `if __name__ ...:`, or None.
+
+        Matches on the name, not the literal, so quoting style and the
+        comparison operator do not matter.
+        """
+        lines = [
+            node.lineno
+            for node in tree.body
+            if isinstance(node, ast.If)
+            and any(
+                isinstance(child, ast.Name) and child.id == "__name__"
+                for child in ast.walk(node.test)
+            )
+        ]
+        return lines[-1] if lines else None
 
     def test_no_test_class_sits_below_the_main_guard(self):
         checked = 0
         for path in sorted(Path(__file__).parent.glob("test_*.py")):
-            text = path.read_text(encoding="utf-8")
-            # Anchored to column 0: this file's own docstring quotes the
-            # guard, and an unanchored search matched that instead.
-            guard = re.search(r'^if __name__ == "__main__":', text, re.M)
-            if not guard:
+            tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+            guard = self._guard_line(tree)
+            if guard is None:
                 continue  # a file with no guard cannot strand anything
             checked += 1
-            stranded = re.findall(r"^class (\w+)", text[guard.start():], re.M)
+            stranded = [
+                node.name
+                for node in tree.body
+                if isinstance(node, ast.ClassDef) and node.lineno > guard
+            ]
             with self.subTest(file=path.name):
                 self.assertEqual(
                     stranded, [],
-                    f"{path.name}: {stranded} sit below the main guard and are "
-                    "skipped by `python3 " + str(path.name) + "`",
+                    f"{path.name}: {stranded} sit below the main guard, so "
+                    f"`python3 tests/{path.name}` skips them",
                 )
         self.assertGreater(checked, 1, "the glob found no sibling test files")
+
+    def test_a_guard_is_recognised_however_it_is_quoted(self):
+        for guard in ('if __name__ == "__main__":', "if __name__ == '__main__':"):
+            with self.subTest(guard=guard):
+                tree = ast.parse(f"import unittest\n{guard}\n    unittest.main()\n")
+                self.assertIsNotNone(self._guard_line(tree))
+
+    def test_the_check_catches_a_class_below_a_single_quoted_guard(self):
+        # The exact case the regex version missed.
+        tree = ast.parse(
+            "import unittest\n"
+            "if __name__ == '__main__':\n"
+            "    unittest.main()\n"
+            "class Stranded(unittest.TestCase):\n"
+            "    pass\n"
+        )
+        guard = self._guard_line(tree)
+        self.assertEqual(
+            [n.name for n in tree.body
+             if isinstance(n, ast.ClassDef) and n.lineno > guard],
+            ["Stranded"],
+        )
 
 
 GATE_VALUES = ["appointment", "non-academic", "country", "language", "eligibility"]
@@ -691,9 +736,19 @@ class RecencyWindowTests(unittest.TestCase):
         body = flat(section(read(SKILLS / "job-scraper" / "SKILL.md"),
                             "## Step 4: Deduplicate and store"))
         self.assertIn("never refreshed", body)
-        self.assertIn("`status` and `gate`, once anything but this command has written them",
-                      body)
-        self.assertIn("`/rank` owns every other value", body)
+        self.assertIn("`status` and `gate`, once `/rank` has written them", body)
+        self.assertIn("Every other value is `/rank`'s", body)
+
+    def test_the_one_case_where_a_sweep_may_overwrite_is_stated_on_both_sides(self):
+        # Step 2 said a gate failure always stores `skipped`; Step 4 said a
+        # status /rank wrote is never touched. Both were unqualified.
+        skill = read(SKILLS / "job-scraper" / "SKILL.md")
+        gates = flat(section(skill, "## Step 2: Gates"))
+        store = flat(section(skill, "## Step 4: Deduplicate and store"))
+        self.assertIn("A gate failure overwrites whatever status the record already had",
+                      gates)
+        self.assertIn("unless a Step 2 gate fired on this sweep", store)
+        self.assertIn("in exactly two cases", store)
 
     def test_the_deadline_check_is_not_called_a_gate(self):
         body = flat(section(read(SKILLS / "job-scraper" / "SKILL.md"), "## Step 2: Gates"))

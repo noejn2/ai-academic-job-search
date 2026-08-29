@@ -33,7 +33,7 @@ def is_ignored(path: Path) -> bool:
     # folder that merely shared a name - templates/documents/, say - was
     # treated as the user's own and silently skipped by every privacy scan
     # that reads shipped_files().
-    if relative.parts[0] in _IGNORED_DIRS:
+    if relative.parts and relative.parts[0] in _IGNORED_DIRS:
         # documents/README.md and the .gitkeep markers are tracked: they are
         # the folder contract the template ships. Everything else there is the
         # user's own.
