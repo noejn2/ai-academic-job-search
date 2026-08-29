@@ -1,113 +1,75 @@
+<!-- SETUP: /setup drafts the STAR candidates from your record. Replace every [BRACKETED] token. -->
+
+# Interview Preparation
+
+Academic searches run in three acts, and each asks for something different.
+
+| Stage | Who is in the room | What they are testing |
+|---|---|---|
+| **Interview** | Search committee, 30-45 minutes, video or conference | Is the research real, can you explain it to non-specialists, will you finish the pipeline, can you teach the courses we need |
+| **Flyout** | Whole department over one to two days: job talk, teaching demo, one-on-ones, graduate students, chair and dean | Can you hold a room, will colleagues want you down the hall, will you get tenure here |
+| **Offer** | Chair and dean | Startup, teaching load, tenure clock, spousal hire, start date |
+
+`/interview <institution>` builds a stage-specific pack from the packet.
+
 ---
-framework_version: 1.0.0
----
 
-# Interview Preparation Guide
+## The job talk
 
-<!-- SETUP: STAR examples are personalized by running /setup based on your actual experience -->
+The single highest-stakes hour of the search.
 
-## STAR Format
+- One paper, usually the job market paper. Not a survey of everything.
+- Structure: the question, why it is hard, what you do, what you find, what it means.
+  The question and its stakes take the first five minutes and decide the room.
+- Time it to leave room for interruption. Some departments interrupt from slide two;
+  ask the host what the culture is.
+- Prepare the three hostile questions you hope nobody asks, and answer them in the
+  talk before they are asked.
+- Know your identification assumption cold, and what breaks if it fails.
 
-Structure answers as: **Situation** (context), **Task** (your responsibility), **Action** (what you did), **Result** (outcome).
+## The teaching demonstration
 
-Keep answers to 1-2 minutes. Be specific. End with what you learned or would do differently.
+- Teach a real lesson at the level asked, not a lecture about teaching.
+- Board work, timing, and one moment where students actually do something.
+- Bring a syllabus for the course the posting names.
 
-## Ready-Made STAR Examples
+## Standard questions
 
-<!-- These are populated by /setup from your actual experience. Below are templates showing the format. -->
+Prepare an answer to each, grounded in the record.
 
-### 1. [PROJECT_NAME] ([SKILL_DEMONSTRATED])
-**S:** [CONTEXT - what was happening, what was the problem]
-**T:** [YOUR RESPONSIBILITY - what you specifically needed to do]
-**A:** [WHAT YOU DID - specific actions, tools, methods]
-**R:** [OUTCOME - measurable results, adoption, impact]
-**Use for:** "[QUESTION_TYPE_1]", "[QUESTION_TYPE_2]"
+- Walk us through your job market paper.
+- What is the contribution, in one sentence, to someone outside your field?
+- What is next after this paper? Where is the five-year agenda going?
+- What would you submit for grant funding here, and to whom?
+- Which of our courses could you teach next year? What would you want to develop?
+- How would you supervise a PhD student on this topic?
+- Why this department?
+- What do you need to succeed here? (Startup, data, computing, teaching relief.)
 
-### 2. [PROJECT_NAME] ([SKILL_DEMONSTRATED])
-**S:** [CONTEXT]
-**T:** [YOUR RESPONSIBILITY]
-**A:** [WHAT YOU DID]
-**R:** [OUTCOME]
-**Use for:** "[QUESTION_TYPE_1]", "[QUESTION_TYPE_2]"
+## Questions you ask
 
-### 3. [PROJECT_NAME] ([SKILL_DEMONSTRATED])
-**S:** [CONTEXT]
-**T:** [YOUR RESPONSIBILITY]
-**A:** [WHAT YOU DID]
-**R:** [OUTCOME]
-**Use for:** "[QUESTION_TYPE_1]", "[QUESTION_TYPE_2]"
+- What does the tenure case look like here in practice - which journals, how many?
+- Who would I be teaching with, and what is the actual load in year one?
+- How are graduate students funded and assigned?
+- What is the seminar series, and who visits?
+- What happened to the last two people hired into this line?
 
-<!-- Add more STAR examples as needed. Aim for 4-6 covering different competencies. -->
+## STAR candidates
 
-## Common Tough Questions
+Short, specific stories the committee questions above can draw on. `/setup` drafts
+the stubs from your record; you finish them, because only you know what actually
+happened.
 
-### "Why did you leave [previous company]?"
-> [PREPARE YOUR ANSWER - be honest, forward-looking, no negativity about former employer]
+### [Achievement title]
+**Source:** [paper / grant / course / dataset]
+**Situation:** [one sentence]
+**Task:** [what was yours to do]
+**Action:** [what you did, specifically]
+**Result:** [what changed, with a number where one exists]
+**Answers:** [which of the questions above this serves]
 
-### "You don't have [specific skill/experience]."
-> [PREPARE YOUR ANSWER - acknowledge the gap, bridge to adjacent experience, show willingness to learn]
+## Roleplay
 
-### "Where do you see yourself in 5 years?"
-> [PREPARE YOUR ANSWER - show ambition aligned with the role's growth path]
-
-### "What's your biggest weakness?"
-> [PREPARE YOUR ANSWER - genuine weakness with concrete mitigation strategy]
-
-### "Why this company specifically?"
-> Customize per company. Must reference: specific projects, company values, market position, or team structure. Never give a generic answer.
-
-## Questions You Should Ask Interviewers
-
-### About the Role
-- "What does a typical week look like in this role?"
-- "What would success look like in the first 6 months?"
-- "What's the biggest challenge the team is facing right now?"
-
-### About the Team
-- "How big is the team, and how do you divide work?"
-- "What does the development/project lifecycle look like, from idea to production?"
-- "How do you onboard new team members?"
-
-### About Tech & Growth
-- "What's your current tech stack for [relevant area]?"
-- "Is there room to grow into more architectural or strategic decisions?"
-- "How does the team stay current with new tools and methods?"
-
-### About Culture (use these to prevent disappointment)
-- "How would you describe the team culture?"
-- "What does professional development look like here?"
-- "Is there flexibility for remote/hybrid work?"
-- "What's the balance between development/new projects and maintenance work?"
-- "How would you describe the leadership style in this team?"
-- "What do people who thrive here have in common?"
-
-## Phone/Video Interview Tips
-- Have STAR examples written out (use this file)
-- Keep a glass of water nearby
-- Smile when speaking (it changes your tone)
-- Ask for clarification if a question is vague
-- It's OK to take 5 seconds to think before answering
-- End with: "Is there anything else you'd like to know about my background?"
-
-## After the Application (Best Practice)
-
-### Follow-Up Etiquette
-- **Don't call to "stand out"** or to learn more about the role post-submission - this risks a negative impression
-- If the employer specified a timeline, respect it and wait
-- If no timeline was given and significant time has passed (2+ weeks), a brief call to ask about status is acceptable
-- If you have genuinely new, relevant information to share, a short follow-up is fine
-
-### Thank-You Notes
-- When you receive any update (interview invitation, rejection, or status update), send a brief thank-you message
-- Express appreciation for their time and the process
-- Keep it short (2-3 sentences)
-
-## Roleplay Guidelines
-When the user asks for interview practice:
-1. Ask which role/company to simulate
-2. Start with easy warm-up questions ("Tell me about yourself")
-3. Progress to role-specific technical questions
-4. Include 1-2 behavioral questions using the competencies from the job posting
-5. End with a tough question or curveball
-6. After each answer, give brief feedback: what worked, what to sharpen
-7. Suggest which STAR example would work best for each question
+The user can ask for a mock interview or a mock job talk Q&A. Stay in role, ask one
+question at a time, follow up on a weak answer once, and give feedback only at the
+end - grouped into what landed, what was vague, and what a committee would push on.

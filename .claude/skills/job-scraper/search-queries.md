@@ -1,90 +1,86 @@
-# Search Queries for Job Scraper
+<!-- SETUP: /setup writes this file. Replace every [BRACKETED] token. -->
 
-<!-- SETUP: Customize these queries based on your skills, target roles, and location -->
+# Search Configuration
 
-## Installed portal CLIs (primary for `/scrape`)
+What `/scrape` searches for. `/setup --section search` rewrites it; edit it by hand
+any time your priorities change.
 
-`/scrape` discovers every portal skill under `.agents/skills/*/SKILL.md` and runs its CLI first. Shipped country-agnostic CLIs include `linkedin-search` and `freehire-search`; Danish demos and any skill you add with `/add-portal` are included the same way. You do **not** need a matching `site:` line below for those CLIs to run.
+---
 
-The `site:` query templates in this file are the **WebSearch fallback** — for portals without a CLI, company career pages, or when a CLI fails.
+## Appointment types in scope
 
-**Language scope:** write every query category in every language listed in your CLAUDE.md Languages table (typically 1-2, sometimes more). A posting requiring a language you have *not* declared, as a job condition, is excluded before scoring; a posting requiring a *higher level* than you declared in a language you *do* work in is flagged for your own judgment, not excluded — see `04-job-evaluation.md`'s Language Gate, the single source of truth for this rule. Translate each category's keywords rather than machine-translating word-for-word (e.g. "Frontend Developer" -> "Desarrollador Frontend", not a literal word-for-word translation) if you work in more than one language.
+`/scrape`'s appointment gate keeps these and drops the rest. Delete the lines you do
+not want.
 
-## Search Sites
+- [x] Tenure-track (assistant professor)
+- [x] Tenured (associate / full professor)
+- [ ] Teaching-track / lecturer / instructor
+- [ ] Visiting (visiting assistant professor, visiting scholar)
+- [ ] Postdoctoral
+- [ ] Research professor / research scientist at a university
 
-Primary (your market's job boards - scaffold one with `/add-portal`):
-- **[YOUR_JOB_BOARD]** - your market's largest general job board
-- **linkedin.com/jobs** - LinkedIn job listings (filter: [YOUR_COUNTRY] / [YOUR_CITY]); also covered by `linkedin-search` CLI
-- **[YOUR_INDUSTRY_JOB_BOARD]** - a niche/industry board for your field (optional)
-- **[YOUR_ADDITIONAL_JOB_BOARD]** - another major board for your market (optional)
+Always out of scope, whatever is ticked above: pre-doctoral and research-assistant
+posts, and every position not hired by a university or college department
+(industry, government agencies, national labs, think tanks, NGOs).
 
-Secondary (company career pages via Google):
-- Direct Google searches with `site:` filters for known target companies
+---
 
-## Query Categories
+## Field terms
 
-Queries are grouped by priority. Write **each category in every language from your Languages table** (see Language scope above). Combine each query with your location terms (e.g. your city, region, or metro area) where the site supports it.
+Passed to `tools/boards.py` as `--query` arguments, OR-ed against the whole record.
+Keep them short: a board's own keywords are terse.
 
-**Organize by function, not job title.** The same underlying work carries different titles across companies and markets (a "Data Scientist" role at one employer may be posted as "Insights Analyst" or "Data Consultant" at another). Name each priority category after the function it covers, and list several plausible job titles as query variants within that category rather than betting an entire priority tier on one exact title string.
+- Primary field: `[YOUR_FIELD]`
+- Subfields: `[SUBFIELD_1]`, `[SUBFIELD_2]`, `[SUBFIELD_3]`
+- Methods that show up in postings: `[METHOD_1]`, `[METHOD_2]`
 
-### Priority 1: [YOUR_PRIMARY_ROLE_TYPE]
+---
 
-These match your strongest and most desired career direction.
+## Countries in scope
+
+- `[COUNTRY_1]`
+- `[COUNTRY_2]`
+
+Relocation is assumed. There is no commute radius in an academic search.
+
+---
+
+## Boards with a fetcher
+
+Read by `python3 tools/boards.py --board all --academic-only`. No account, no key.
+
+| Board | What it covers |
+|---|---|
+| **AEA JOE** (`aeaweb.org/joe`) | The economics market. Read through the board's spreadsheet export, so each record arrives with the full posting text, the deadline and the section label. |
+| **EconJobMarket** (`econjobmarket.org/positions`) | Economics, overlapping JOE but not identical; carries European and Canadian searches JOE misses. |
+| **AAEA Job Board** (`aaea.execinc.com/edibo/JobBoard`) | Agricultural and applied economics specifically. No deadlines published; titles and institutions only, so `/scrape` fetches each posting page. |
+
+Outside economics, these three return little. Add your field's board as a
+`site:` query below rather than writing a parser: the fetcher exists because these
+three publish structured data, not because parsing is the goal.
+
+---
+
+## Search sites without a fetcher
+
+`/scrape` Step 1b runs these as WebSearch queries every sweep.
 
 ```
-site:[YOUR_JOB_BOARD] "[YOUR_PRIMARY_JOB_TITLE_1]" [YOUR_CITY]
-site:[YOUR_JOB_BOARD] "[YOUR_PRIMARY_JOB_TITLE_2]" [YOUR_CITY]
-site:[YOUR_JOB_BOARD] "[YOUR_KEY_SKILL]" [YOUR_CITY]
-site:linkedin.com/jobs "[YOUR_PRIMARY_JOB_TITLE_1]" [YOUR_COUNTRY]
+site:higheredjobs.com "[YOUR_FIELD]" assistant professor
+site:academicjobsonline.org [YOUR_FIELD]
+site:jobs.chronicle.com [YOUR_FIELD] faculty
+site:apply.interfolio.com [YOUR_FIELD] assistant professor
+"[SUBFIELD_1]" "assistant professor" [CURRENT_SEASON] site:.edu
+"[YOUR_FIELD]" "visiting assistant professor" site:.edu
 ```
 
-### Priority 2: [YOUR_DOMAIN_EXPERTISE]
+Add one line per department you are watching directly, e.g.
+`site:careers.[UNIVERSITY].edu [YOUR_FIELD]`.
 
-These match your domain expertise.
+---
 
-```
-site:[YOUR_JOB_BOARD] [YOUR_DOMAIN_KEYWORD_1] [YOUR_CITY] OR [YOUR_REGION]
-site:[YOUR_JOB_BOARD] [YOUR_DOMAIN_KEYWORD_2] [YOUR_COUNTRY]
-site:linkedin.com/jobs [YOUR_DOMAIN_KEYWORD_1] [YOUR_CITY] [YOUR_COUNTRY]
-```
+## Filters applied after the search
 
-### Priority 3: [YOUR_ADJACENT_ROLE_TYPE]
-
-Adjacent roles you could pivot into.
-
-```
-site:[YOUR_JOB_BOARD] "[YOUR_ADJACENT_TITLE_1]" [YOUR_KEY_SKILL] [YOUR_CITY]
-site:[YOUR_JOB_BOARD] "[YOUR_ADJACENT_TITLE_2]" [YOUR_KEY_SKILL] [YOUR_CITY]
-```
-
-### Priority 4: Broader Technical / Consulting
-
-Wider net for general technical roles.
-
-```
-site:[YOUR_JOB_BOARD] [YOUR_KEY_SKILL] developer [YOUR_CITY]
-site:linkedin.com/jobs "[YOUR_KEY_SKILL] developer" [YOUR_CITY]
-site:[YOUR_JOB_BOARD] "technical consultant" [YOUR_DOMAIN] [YOUR_CITY]
-```
-
-## Location Filter
-
-When evaluating results, verify the job location is within reasonable commute distance from your home. Define acceptable areas:
-- [YOUR_CITY] and surrounding areas
-- [ACCEPTABLE_AREA_1]
-- [ACCEPTABLE_AREA_2]
-- [BORDERLINE_AREA] (borderline - ~X min by transit)
-- [TOO_FAR_AREA] (too far)
-
-## Language Filter
-
-Your working languages and levels are in CLAUDE.md's Languages table. When filtering scraped results, apply `04-job-evaluation.md`'s Language Gate: a posting requiring a language you haven't declared at all is excluded; a posting requiring a higher level than you declared in a language you do work in is not excluded, flag it clearly instead (see `job-scraper/SKILL.md`'s Step 3 "Quick Fit Assessment" for how the flag surfaces in `/scrape` output). Postings simply *written* in a language you don't work in, that don't require it on the job, are fine.
-
-## Date Filter
-
-Only include jobs posted within the last 14 days, or with an application deadline that has not yet passed. If a posting date cannot be determined, include it but flag as "date unknown".
-
-## Adapting Queries
-
-If the user specifies a focus area, select queries from the matching category and also generate 2-3 custom queries for that focus. For example:
-- "/scrape [focus_area]" -> relevant category queries + custom focus-specific queries
+- **Deadline:** postings whose deadline has passed are stored as expired, never shown as new.
+- **Language:** a posting stating a required working language absent from your profile is skipped.
+- **Recency:** postings first seen more than 120 days ago and never applied to are dropped from the report; academic searches run long, so this window is much wider than an industry one.

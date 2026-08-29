@@ -1,73 +1,114 @@
----
-framework_version: 1.1.1
----
+<!-- SETUP: /setup writes this file from documents/. Replace every [BRACKETED] token. -->
 
 # Candidate Profile
 
-<!-- SETUP: This file is populated by running /setup -->
-<!-- After running /setup, all sections will be filled with your actual information -->
+The factual record. Every claim in a CV, cover letter or statement must trace back
+to this file, to the master CV in `documents/cv/`, or to a statement in
+`documents/statements/`. Nothing else counts as a source.
+
+**Profile status:** incomplete
+<!-- /setup sets this to "complete" only when there are at least three referees and
+     both a research and a teaching statement are on file. -->
 
 ## Identity
+
 - **Name:** [YOUR_NAME]
-- **Location:** [YOUR_ADDRESS]
-- **Phone:** [YOUR_PHONE]
+- **Location:** [CITY, COUNTRY]
 - **Email:** [YOUR_EMAIL]
-- **LinkedIn:** [YOUR_LINKEDIN_URL]
-- **GitHub:** [YOUR_GITHUB_URL]
-- **Status:** [YOUR_EMPLOYMENT_STATUS]
-- **Constraints:** [YOUR_COMMUTE_OR_LOCATION_CONSTRAINTS]
+- **Phone:** [YOUR_PHONE]
+- **Website:** [YOUR_WEBSITE] | **Google Scholar:** [YOUR_SCHOLAR] | **ORCID:** [YOUR_ORCID]
+- **Work authorization:** [CITIZENSHIP / VISA STATUS]
+- **Countries in scope:** [COUNTRY_1], [COUNTRY_2]
 
 ### Languages
-<!-- Every language you can work in professionally, with your honest level. Used by the
-Language Gate in 04-job-evaluation.md and by job-scraper/search-queries.md's query-language
-generation. Omit any language you don't actually work in - an undeclared language is treated as
-a hard no, not a gap to smooth over. -->
 
-| Language | Level | Notes |
-|----------|-------|-------|
-| [LANGUAGE] | [LEVEL, e.g. "Native" / "C2" / "B1/B2 (conversational)"] | [optional] |
+| Language | Level |
+|---|---|
+| [LANGUAGE] | [native / fluent / B2 / ...] |
+
+A posting requiring a language absent from this table is skipped by the Language
+Gate in `04-job-evaluation.md`; one requiring a higher level in a language listed
+here is flagged for your judgment. Be honest rather than optimistic.
 
 ## Education
 
-| Degree | Period | Institution | Key Topics |
-|--------|--------|-------------|------------|
-| [DEGREE] | [YEARS] | [INSTITUTION] | [TOPICS] |
+- **[DEGREE], [FIELD]** ([YEAR]-[YEAR]) - [INSTITUTION]
+  - Dissertation: "[TITLE]" (Advisor: [ADVISOR])
+  - Committee: [NAMES]
+  - Fields / qualifying exams: [FIELDS]
 
-## Professional Experience
+## Appointments
 
-### [JOB_TITLE] - [COMPANY] ([START] - [END])
-[LOCATION]
-- [RESPONSIBILITY_OR_ACHIEVEMENT_1]
-- [RESPONSIBILITY_OR_ACHIEVEMENT_2]
-- [RESPONSIBILITY_OR_ACHIEVEMENT_3]
+- **[TITLE]** ([YEAR]-[YEAR]) - [INSTITUTION / EMPLOYER], [LOCATION]
+  - [What the position involved, in the terms a search committee reads.]
 
-<!-- Add more roles as needed -->
+## Research
 
-## Independent Projects
-<!-- Projects outside of employment: freelance, open source, personal -->
-- **[PROJECT_NAME]**: [DESCRIPTION]
+Agenda, job market paper and pipeline are assessed in `08-statements.md`; the
+statements themselves live in `documents/statements/`. This section is the record.
 
-## Technical Skills
+### Peer-reviewed articles
+- [Authors]. ([Year]). "[Title]." *[Journal]* [volume(issue): pages]. [DOI]
 
-### Programming & ML
-- **[LANGUAGE]** ([PROFICIENCY]): [FRAMEWORKS_AND_LIBRARIES]
-- [OTHER_SKILLS]
+### Book chapters
+- [Authors]. ([Year]). "[Title]." In *[Book]*, [editors]. [Publisher].
 
-### Domain Expertise
-- [DOMAIN_1]
-- [DOMAIN_2]
+### Under review
+- "[Title]." [Coauthors]. Under review at *[Journal]* since [Month Year].
 
-### Software & Tools
-- [TOOL_LIST]
+### Working papers
+- "[Title]." [Coauthors]. [Series and number, if any]. [Year].
 
-## Publications
-<!-- List peer-reviewed publications, if any -->
-1. [AUTHOR_LIST] ([YEAR]). [TITLE]. [JOURNAL]. [DOI_LINK]
+### In preparation
+- "[Title]." [Coauthors]. [One line on status.]
 
-## Awards
-- [AWARD] - [EVENT] ([YEAR])
+### Job market paper
+- **[TITLE]** - [solo / with coauthors]. [Status.] File: `documents/papers/[FILE].pdf`
 
-## References
-- [NAME], [TITLE], [COMPANY] ([EMAIL], [PHONE])
+### Grants and fellowships
+- **[NAME]**, [funder], [amount], [year]. Role: [PI / co-PI / senior personnel].
 
-More references available upon request.
+### Awards
+- **[AWARD]** - [awarding body] ([year])
+
+### Selected presentations
+- "[Paper]." [Conference or seminar], [location], [year].
+
+## Teaching
+
+### Courses taught
+| Course | Institution | Role | Term | Enrolment | Evaluation |
+|---|---|---|---|---|---|
+| [CODE: TITLE] | [INSTITUTION] | [instructor of record / TA / guest] | [TERM] | [N] | [score or "none on file"] |
+
+Teaching evaluations, syllabi and course materials belong in `documents/teaching/`.
+
+### Courses you can teach
+- **Ready now:** [COURSE], [COURSE]
+- **With one term of preparation:** [COURSE]
+
+### Mentoring and advising
+- [Student], [level], [year]. [Outcome.]
+
+## Service
+
+- **Refereeing:** [journals]
+- **Departmental and professional service:** [roles]
+
+## Skills, software and data
+
+- **Methods:** [METHODS]
+- **Languages and tools:** [TOOLS]
+- **Public software or data:** [PACKAGE / DASHBOARD - where it lives]
+
+## Referees
+
+At least three. `/setup` will not mark the profile complete with fewer.
+Referees send their letters themselves - this workspace never drafts, simulates or
+attaches one, and does not track whether a letter has been sent.
+
+| Name | Title | Institution | Email | Phone | Relationship |
+|---|---|---|---|---|---|
+| [NAME] | [TITLE] | [INSTITUTION] | [EMAIL] | [PHONE or blank] | [PhD advisor / committee member / co-author / supervisor] |
+
+Additional referees available on request: [NAMES], if any.

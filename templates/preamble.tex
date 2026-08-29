@@ -1,0 +1,27 @@
+% Shared preamble for every document in an application packet: the cover letter,
+% the research statement, the teaching statement and any other statement a
+% posting asks for. One preamble means the packet reads as one document.
+%
+% Compile with pdflatex (twice, so page references settle).
+% For A4, change letterpaper to a4paper below - /setup writes your choice here.
+
+\usepackage[letterpaper,margin=1in]{geometry}
+\usepackage{times}
+\usepackage[svgnames]{xcolor}
+\usepackage[colorlinks=true,linkcolor=DarkBlue,urlcolor=DarkBlue,citecolor=DarkBlue]{hyperref}
+\usepackage{titlesec}
+\usepackage{enumitem}
+
+\titleformat{\section}{\normalsize\bfseries}{}{0pt}{}
+\titlespacing{\section}{0pt}{10pt}{4pt}
+\setlength{\parskip}{4pt}
+\setlength{\parindent}{0pt}
+
+% \hdr{<Document title>}{<Position and institution>}
+% e.g. \hdr{Research Statement}{Assistant Professor of Economics, [INSTITUTION]}
+\newcommand{\hdr}[2]{%
+  \begin{center}
+    {\large\bfseries #1}\\[2pt]
+    {[YOUR NAME]\quad\textbar\quad #2}
+  \end{center}
+  \vspace{4pt}\hrule\vspace{10pt}}

@@ -126,7 +126,7 @@ class SkillAndCommandCheckTests(LinterRepoFixture):
             "---\n"
             "name: example\n"
             "description: Example skill\n"
-            "allowed-tools: Bash(bun run .claude/skills/example/DOES_NOT_EXIST.ts *)\n"
+            "allowed-tools: Bash(python3 tools/DOES_NOT_EXIST.py:*)\n"
             "---\n"
         )
 
@@ -134,16 +134,17 @@ class SkillAndCommandCheckTests(LinterRepoFixture):
 
         self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
         self.assertIn("allowed-tools references a missing file", result.stdout)
-        self.assertIn("DOES_NOT_EXIST.ts", result.stdout)
+        self.assertIn("DOES_NOT_EXIST.py", result.stdout)
 
     def test_allowed_tools_referencing_an_existing_file_passes(self):
-        target = self.root / ".claude" / "skills" / "example" / "cli.ts"
-        target.write_text("// present\n", encoding="utf-8")
+        target = self.root / "tools" / "present.py"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text("# present\n", encoding="utf-8")
         self.write_skill(
             "---\n"
             "name: example\n"
             "description: Example skill\n"
-            "allowed-tools: Bash(bun run .claude/skills/example/cli.ts *)\n"
+            "allowed-tools: Bash(python3 tools/present.py:*)\n"
             "---\n"
         )
 

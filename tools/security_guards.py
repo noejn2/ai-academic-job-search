@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
-"""Supply-chain guards for the template's riskiest surfaces.
+"""Guards for this template's riskiest surfaces.
 
-Run from anywhere: python tools/security_guards.py
+Run from anywhere: python3 tools/security_guards.py
 
-This repo ships pre-approved Claude Code permissions and CLI code that every
-fork user executes. These guards make the dangerous changes LOUD, not
-impossible: a PR that intentionally needs one of them must update the
-allowlists in this file in the same diff, so the change is explicit and
-reviewable rather than buried.
+This repo ships pre-approved Claude Code permissions and holds a user's personal
+record. These guards make the dangerous changes LOUD, not impossible: a PR that
+intentionally needs one of them must update the allowlists in this file in the
+same diff, so the change is explicit and reviewable rather than buried.
 
 Checks:
 1. .claude/settings.json — every permissions.allow entry must be in the exact
@@ -19,10 +18,10 @@ Checks:
 2. .gitignore — the personal-data ignore rules must all still be present,
    and no un-allowlisted negation (!pattern) may re-include them. Catches
    weakening that would make future users silently commit their tracker,
-   profile exports, or application archives.
-3. .agents/**/package.json — no npm/bun lifecycle scripts (preinstall,
-   install, postinstall, prepare, prepack) and no trustedDependencies.
-   Catches code execution smuggled into `bun install`.
+   documents, or application packets.
+3. No package.json anywhere — this workspace runs on python3 and pdflatex, so
+   there is no installer for a dependency's lifecycle script to run on a
+   fork user's machine.
 
 Stdlib only. Exit 0 on success, 1 with a failure list otherwise.
 """
@@ -38,59 +37,33 @@ errors: list[str] = []
 # an entry must add it here too - that is the point: the diff shows both.
 ALLOWED_PERMISSIONS = {
     "Skill(job-application-assistant)",
-    "Bash(bun run:*)",
-    "Bash(python salary_lookup.py:*)",
-    "Bash(python3 salary_lookup.py:*)",
-    "Bash(python tools/verify_pdf.py:*)",
-    "Bash(python3 tools/verify_pdf.py:*)",
-    "Bash(pdftotext:*)",
+    "Skill(scrape)",
+    "Bash(python3 tools/boards.py:*)",
+    "Bash(pdflatex:*)",
 }
 
 # Personal-data ignore rules that must never disappear from .gitignore.
 REQUIRED_IGNORE_RULES = [
-    "salary_data.json",
-    # Depth-independent: the job-scraper skill resolves `job_scraper/` relative
-    # to its own directory, so the state file lands under .claude/skills/... and
-    # a repo-rooted rule silently fails to match it.
-    "**/job_scraper/seen_jobs.json",
-    "**/job_scraper/notion_sync.json",
-    "**/job_scraper/*.md",
-    "*_BehavioralReport.pdf",
-    "linkedin_Profile.pdf",
-    "cv/main_*.*",
-    "!cv/main_example.tex",
-    # ATS text extractions (/apply step 5d) carry the CV's full text.
-    "cv/*.txt",
-    "cover_letters/cover_*.*",
-    # /apply also recognizes the uppercase Cover_* naming variant.
-    "cover_letters/Cover_*.*",
+    # The user's own source material: CV, statements, papers, referees,
+    # teaching evidence, transcripts, pasted postings.
     "documents/cv/**",
-    "documents/linkedin/**",
-    "documents/diplomas/**",
+    "documents/statements/**",
+    "documents/papers/**",
     "documents/references/**",
-    "documents/applications/**",
+    "documents/diplomas/**",
+    "documents/teaching/**",
     "documents/postings/**",
-    "documents/interview/**",
+    # Packets name the departments applied to and quote what was submitted.
+    "applications/**",
     "job_search_tracker.csv",
-    "gmail_sync/",
-    "reports/",
-    "upskill/*.md",
-    # Depth-independent twin of the rule above. The upskill *skill* resolves
-    # `upskill/` relative to its own directory - the same observed behavior
-    # the **/job_scraper rules exist for - so reports can land at
-    # .claude/skills/upskill/upskill/*.md where the rooted rule cannot see
-    # them. `**/upskill/*.md` would also ignore the skill's own SKILL.md
-    # (the directory shares the name), so the report-file prefix is pinned.
-    "**/upskill/report-*.md",
-    # Not personal data but the same failure mode: /add-portal can generate a
-    # skill for a portal that only returns usable content through a paid
-    # fetching service, and that skill reads an API token from the environment.
+    # Depth-independent: the job-scraper skill resolves `job_scraper/` relative
+    # to its own directory, so the state file can land under .claude/skills/...
+    # where a repo-rooted rule silently fails to match it.
+    "**/job_scraper/seen_jobs.json",
+    # A packet's compiled PDFs are the application itself.
+    "*.pdf",
     ".env",
     ".env.*",
-    # Company research cache (/apply Step 3, /interview Step 2). Referenced
-    # from commands, not a skill, so a plain rooted rule is correct here -
-    # unlike the **/-prefixed job_scraper/upskill rules above.
-    "company_research/*.json",
 ]
 
 # Negation (re-include) rules the template legitimately ships. .gitignore is
@@ -101,10 +74,9 @@ REQUIRED_IGNORE_RULES = [
 # failure - add an intentional one here in the same PR, exactly as with
 # ALLOWED_PERMISSIONS, so the widening is explicit and reviewable.
 ALLOWED_IGNORE_NEGATIONS = {
-    "!cover_letters/OpenFonts/fonts/**",
-    "!cv/main_example.tex",
-    "!cover_letters/cover_example.tex",
     "!documents/**/.gitkeep",
+    "!applications/.gitkeep",
+    "!job_scraper/.gitkeep",
 }
 
 # Hook commands the template legitimately ships, as "<Event>:<command>" strings.
@@ -119,7 +91,6 @@ ALLOWED_IGNORE_NEGATIONS = {
 # https://research.jfrog.com/post/shai-hulud-is-back-august/
 ALLOWED_HOOKS: set[str] = set()
 
-FORBIDDEN_SCRIPTS = {"preinstall", "install", "postinstall", "prepare", "prepack"}
 
 
 def _hook_commands(event: str, entries: object):
@@ -225,43 +196,33 @@ def check_gitignore() -> None:
             )
 
 
-def check_package_manifests() -> None:
+def check_no_node_toolchain() -> None:
+    """This workspace runs on python3 and pdflatex. Nothing else.
+
+    A package.json anywhere would mean a fork user is expected to run an
+    installer, and `npm`/`bun install` executes lifecycle scripts from every
+    transitive dependency on their machine. Keeping the tree free of manifests
+    removes that surface rather than policing it.
+    """
     manifests = [
-        p for p in ROOT.glob(".agents/**/package.json") if "node_modules" not in p.parts
+        path
+        for path in ROOT.rglob("package.json")
+        if "node_modules" not in path.parts and ".git" not in path.parts
     ]
-    if not manifests:
-        errors.append(".agents: no package.json files found - glob roots are wrong or the tree moved")
     for manifest in manifests:
-        relpath = manifest.relative_to(ROOT)
-        try:
-            data = json.loads(manifest.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError) as exc:
-            errors.append(f"{relpath}: unreadable or invalid JSON: {exc}")
-            continue
-        if not isinstance(data, dict):
-            errors.append(f"{relpath}: top-level JSON value must be an object")
-            continue
-        scripts = data.get("scripts", {})
-        if not isinstance(scripts, dict):
-            errors.append(f"{relpath}: scripts must be an object")
-            continue
-        bad = FORBIDDEN_SCRIPTS & set(scripts)
-        if bad:
-            errors.append(
-                f"{relpath}: lifecycle script(s) {sorted(bad)} are forbidden - they execute "
-                "arbitrary code during `bun install` on every fork user's machine."
-            )
-        if "trustedDependencies" in data:
-            errors.append(
-                f"{relpath}: trustedDependencies is forbidden - it re-enables dependency "
-                "lifecycle scripts that bun blocks by default."
-            )
+        errors.append(
+            f"{manifest.relative_to(ROOT)}: this repository ships no Node toolchain. "
+            "A package.json means `npm install` or `bun install` runs dependency "
+            "lifecycle scripts on every user's machine. Keep tools in the Python "
+            "standard library, or add the manifest to this guard in the same PR."
+        )
+
 
 
 def main() -> int:
     check_permissions()
     check_gitignore()
-    check_package_manifests()
+    check_no_node_toolchain()
     if errors:
         print(f"security_guards: {len(errors)} failure(s)")
         for err in errors:
@@ -269,7 +230,7 @@ def main() -> int:
         return 1
     print(
         "security_guards: OK (permissions allowlist, hooks allowlist, gitignore rules, "
-        "package manifests)"
+        "no Node toolchain)"
     )
     return 0
 

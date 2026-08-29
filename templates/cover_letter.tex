@@ -1,0 +1,53 @@
+% Skeleton for the packet's cover letter. A plain typed letter sharing the
+% packet preamble: a search committee reads a letter, not a designed document.
+%
+% Compile with pdflatex (twice). One page by default; two only when the posting
+% requires the letter itself to carry research and teaching goals.
+
+\documentclass[11pt]{article}
+\input{preamble}
+
+\begin{document}
+
+% Each field is braced: a line ending in \\ followed by a line starting with
+% "[" makes LaTeX read the bracket as \\'s optional length argument and the
+% compile dies with "Missing number, treated as zero".
+\begin{flushright}
+{[YOUR NAME]}\\
+{[YOUR ADDRESS LINE]}\\
+{[YOUR EMAIL]} \quad\textbar\quad {[YOUR PHONE]}\\
+{[DATE]}
+\end{flushright}
+
+\vspace{6pt}
+
+{[SEARCH CHAIR NAME]}\\
+{[SEARCH COMMITTEE / DEPARTMENT]}\\
+{[INSTITUTION]}\\
+{[CITY, STATE]}
+
+\vspace{6pt}
+
+Dear [SALUTATION],
+
+[Opening: the position by its own name and vacancy number, and the single
+strongest reason the committee should keep reading.]
+
+[Research paragraph: the agenda, the job market paper or flagship result, what
+it means for this department.]
+
+[Teaching paragraph: the courses named in the posting you can teach, and the
+evidence.]
+
+[Fit paragraph: the department's stated emphases, colleagues, centres or data
+you would work with. Specific, verifiable, never flattery.]
+
+[Closing: what is enclosed, matching the posting's required-document list, and
+how references will reach them.]
+
+\vspace{10pt}
+
+Sincerely,\\[18pt]
+{[YOUR NAME]}
+
+\end{document}

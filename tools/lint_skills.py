@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Lint the repo's skill, command, and settings files.
 
-Run from anywhere: python tools/lint_skills.py
+Run from anywhere: python3 tools/lint_skills.py
 
 Checks:
-- Every SKILL.md (.claude/skills/*, .agents/skills/*) has YAML frontmatter that
-  parses, with non-empty `name` and `description` keys
-- `allowed-tools` entries of the form `Bash(bun run <path> *)` point at files
-  that exist (skill paths resolve relative to the repo root and to .agents/)
+- Every .claude/skills/*/SKILL.md has YAML frontmatter that parses, with
+  non-empty `name` and `description` keys
+- `allowed-tools` entries naming a script (`Bash(python3 <path>:*)`) point at a
+  file that exists, so a renamed tool cannot leave a skill silently broken
 - Every .claude/commands/*.md starts with a `# /<name>` title
 - .claude/settings.json is valid JSON with a permissions.allow list
 
@@ -55,19 +55,12 @@ def check_skill(path: Path) -> None:
 
     allowed = data.get("allowed-tools", "")
     if isinstance(allowed, str):
-        for match in re.finditer(r"bun run ([^\s)]+)", allowed):
-            target = match.group(1).rstrip("*")
-            if not target or target.endswith("/"):
-                continue
-            # Targets may contain globs (e.g. .agents/skills/*/cli/src/cli.ts);
-            # require at least one existing file to match.
-            if "*" in target:
-                if not list(ROOT.glob(target)) and not list((ROOT / ".agents").glob(target)):
-                    errors.append(f"{rel(path)}: allowed-tools glob matches no files: {target}")
-            else:
-                candidates = [ROOT / target, ROOT / ".agents" / target]
-                if not any(c.is_file() for c in candidates):
-                    errors.append(f"{rel(path)}: allowed-tools references a missing file: {target}")
+        for match in re.finditer(r"python3? ([^\s):]+)", allowed):
+            target = match.group(1)
+            if not (ROOT / target).is_file():
+                errors.append(
+                    f"{rel(path)}: allowed-tools references a missing file: {target}"
+                )
 
 
 def check_command(path: Path) -> None:
@@ -96,7 +89,7 @@ def check_settings() -> None:
 
 
 def main() -> int:
-    skills = sorted(ROOT.glob(".claude/skills/*/SKILL.md")) + sorted(ROOT.glob(".agents/skills/*/SKILL.md"))
+    skills = sorted(ROOT.glob(".claude/skills/*/SKILL.md"))
     commands = sorted((ROOT / ".claude" / "commands").glob("*.md"))
     if not skills:
         errors.append("no SKILL.md files found - glob roots are wrong or the tree moved")

@@ -1,0 +1,126 @@
+"""What ships must be a template, not someone's job search.
+
+The profile files are tracked, unlike documents/ and applications/. After
+/setup they hold a real person's record - publications, referees, contact
+details. These tests are what stops that state from being committed and
+published: every tracked file a command writes into must still carry its
+placeholders when the repository is packaged.
+"""
+
+import re
+import sys
+import unittest
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from support import REPO_ROOT, git_ignores, shipped_files  # noqa: E402
+PROFILE = REPO_ROOT / ".claude" / "skills" / "job-application-assistant"
+
+# Files /setup or /apply write personal data into. Each ships with a SETUP
+# marker and at least one [BRACKETED] token.
+FILLED_BY_SETUP = [
+    PROFILE / "01-candidate-profile.md",
+    PROFILE / "02-behavioral-profile.md",
+    PROFILE / "04-job-evaluation.md",
+    PROFILE / "07-interview-prep.md",
+    PROFILE / "08-statements.md",
+    REPO_ROOT / ".claude" / "skills" / "job-scraper" / "search-queries.md",
+]
+
+TEMPLATES = [
+    REPO_ROOT / "templates" / "preamble.tex",
+    REPO_ROOT / "templates" / "statement.tex",
+    REPO_ROOT / "templates" / "cover_letter.tex",
+]
+
+PLACEHOLDER = re.compile(r"\[[A-Z][A-Z_0-9 ]*\]")
+SETUP_MARKER = "<!-- SETUP:"
+
+# Everything tracked. documents/ and applications/ are gitignored, so a file
+# there is the user's own and none of this applies to it.
+TRACKED_TEXT = shipped_files(
+    "*.md", ".claude/**/*.md", ".claude/**/*.json", "templates/*.tex",
+    "tools/*.py", "tests/*.py", "*.csv", ".github/**/*",
+)
+
+
+class PlaceholderTests(unittest.TestCase):
+    def test_every_setup_written_file_ships_a_marker_and_placeholders(self):
+        for path in FILLED_BY_SETUP:
+            with self.subTest(file=path.name):
+                text = path.read_text(encoding="utf-8")
+                self.assertTrue(
+                    text.startswith(SETUP_MARKER),
+                    f"{path.name} must open with a {SETUP_MARKER} comment",
+                )
+                self.assertTrue(
+                    PLACEHOLDER.search(text),
+                    f"{path.name} has no [BRACKETED] placeholder left - "
+                    "it looks filled in, which means personal data may ship",
+                )
+
+    def test_the_templates_ship_placeholders(self):
+        for path in TEMPLATES:
+            with self.subTest(file=path.name):
+                self.assertTrue(
+                    PLACEHOLDER.search(path.read_text(encoding="utf-8")),
+                    f"{path.name} has no placeholder left",
+                )
+
+    def test_the_profile_ships_incomplete(self):
+        text = (PROFILE / "01-candidate-profile.md").read_text(encoding="utf-8")
+        self.assertIn("**Profile status:** incomplete", text)
+
+
+class NoPersonalDataTests(unittest.TestCase):
+    """Cheap signatures of a filled-in profile, checked across every tracked file."""
+
+    def test_no_real_email_address(self):
+        # A placeholder email is [YOUR_EMAIL] or your.email@example.com; anything
+        # else with an @ and a dotted domain is somebody's actual address.
+        pattern = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
+        allowed = re.compile(r"(example\.(com|org)|your\.email|\[|@[\w-]*\.?(edu|com)\b(?=\W*\]))")
+        for path in TRACKED_TEXT:
+            text = path.read_text(encoding="utf-8", errors="replace")
+            for match in pattern.finditer(text):
+                address = match.group(0)
+                if allowed.search(address) or "example" in address:
+                    continue
+                if address.startswith("git@github.com"):
+                    continue  # an SSH clone URL, not a mailbox
+                # Institutional addresses in prose examples are the only other
+                # legitimate case, and there are none: fail loudly.
+                self.fail(f"{path.relative_to(REPO_ROOT)}: real-looking email {address!r}")
+
+    def test_no_phone_number(self):
+        pattern = re.compile(r"\+\d{1,3}[\s(]\(?\d{2,4}\)?[\s-]\d{3}[\s-]\d{3,4}")
+        for path in TRACKED_TEXT:
+            text = path.read_text(encoding="utf-8", errors="replace")
+            match = pattern.search(text)
+            self.assertIsNone(
+                match, f"{path.relative_to(REPO_ROOT)}: phone number {match and match.group(0)!r}"
+            )
+
+    def test_the_tracker_ships_empty(self):
+        rows = (REPO_ROOT / "job_search_tracker.csv").read_text(encoding="utf-8")
+        self.assertEqual(len(rows.strip().splitlines()), 1, "tracker ships with data rows")
+
+    def test_no_packet_or_document_is_tracked(self):
+        # .gitkeep markers give the folders their shape; anything else in them
+        # is the user's own material and must not be in the repository.
+        for folder in ("documents", "applications"):
+            for path in (REPO_ROOT / folder).rglob("*"):
+                if path.is_dir() or path.name in (".gitkeep", "README.md"):
+                    continue
+                with self.subTest(path=str(path.relative_to(REPO_ROOT))):
+                    # Present on a working copy, but never committed: the guard
+                    # test in test_security_guards covers the ignore rules, so
+                    # here we only assert the shipped tree has no surprises.
+                    self.assertTrue(
+                        git_ignores(path),
+                        f"{path.relative_to(REPO_ROOT)} is not covered by .gitignore",
+                    )
+
+
+if __name__ == "__main__":
+    unittest.main()

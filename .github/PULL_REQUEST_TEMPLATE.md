@@ -1,15 +1,24 @@
-<!-- Heads-up before you publish: if you built this in a personalized fork
-     (your profile data, your market's job portals, another AI runtime),
-     note that GitHub points new PRs at the UPSTREAM repo by default.
-     Those adaptations live in forks - see CONTRIBUTING.md - and get
-     discovered via the pinned "Community forks & adaptations" discussion (#78).
-     Check the "base repository" dropdown above before you continue. -->
+## What this changes
 
-## What changed and why
+<!-- One or two sentences. -->
 
-## Failing case / reproduction (for fixes)
+## Checks
 
-## Verification
-<!-- What you ran, per CONTRIBUTING: python3 tools/lint_skills.py,
-     python3 tools/check_framework_version.py, bun test / bun run typecheck
-     in touched CLIs, python3 -m unittest discover -s tests -->
+```bash
+python3 -m unittest discover -s tests -t .
+python3 tools/security_guards.py
+python3 tools/lint_skills.py          # needs PyYAML
+```
+
+- [ ] Tests pass
+- [ ] Guards pass
+- [ ] Lint passes
+
+## Ground rules
+
+- [ ] No personal data. Tracked profile files still carry their `[BRACKETED]` placeholders and `<!-- SETUP: -->` markers
+- [ ] No new dependencies. Python standard library and `pdflatex` only
+- [ ] Academic scope only. Nothing here is for industry, government, think-tank or national-lab applications
+- [ ] Nothing drafts, templates or attaches a reference letter
+- [ ] If a command's prose changed a contract string (tracker header, status vocabulary, compile instruction), the test asserting it changed in the same commit
+- [ ] If a board parser changed, `tests/fixtures/` has a trimmed fixture proving the new shape

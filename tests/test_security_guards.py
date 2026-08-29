@@ -43,18 +43,15 @@ class GuardRepoFixture(unittest.TestCase):
         self.gitignore = self.root / ".gitignore"
         self.write_gitignore(security_guards.REQUIRED_IGNORE_RULES)
 
-        self.manifest = self.root / ".agents" / "skills" / "example-search" / "cli" / "package.json"
-        self.manifest.parent.mkdir(parents=True)
-        self.write_manifest({"name": "example-cli", "scripts": {"start": "bun run src/cli.ts"}})
-
     def write_settings(self, allow):
         self.settings.write_text(json.dumps({"permissions": {"allow": list(allow)}}))
 
     def write_gitignore(self, rules):
         self.gitignore.write_text("\n".join(rules) + "\n")
 
-    def write_manifest(self, data, path=None):
-        (path or self.manifest).write_text(json.dumps(data))
+    def write_manifest(self, data, path):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(data))
 
 
 class CleanTreeTests(GuardRepoFixture):
@@ -241,49 +238,56 @@ class GitignoreGuardTests(GuardRepoFixture):
         result = run_guards(self.root)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
-    def test_generated_report_rules_are_required(self):
-        # Reports are generated from the user's tracker and application archive,
-        # so losing these ignore rules can expose personal job-search history.
-        sensitive_outputs = ["reports/", "upskill/*.md", "**/upskill/report-*.md"]
+    def test_personal_document_rules_are_required(self):
+        # These four cover everything a user drops into the workspace: their CV,
+        # their statements, their packets and their tracker. Losing any one of
+        # them commits the search itself.
+        sensitive = [
+            "documents/cv/**",
+            "documents/statements/**",
+            "applications/**",
+            "job_search_tracker.csv",
+        ]
         remaining = [
             rule
             for rule in security_guards.REQUIRED_IGNORE_RULES
-            if rule not in sensitive_outputs
+            if rule not in sensitive
         ]
         self.write_gitignore(remaining)
 
         result = run_guards(self.root)
 
         self.assertEqual(result.returncode, 1)
-        self.assertIn("reports/", result.stdout)
-        self.assertIn("upskill/*.md", result.stdout)
-        self.assertIn("**/upskill/report-*.md", result.stdout)
+        for rule in sensitive:
+            self.assertIn(rule, result.stdout)
 
 
 class GitignorePatternBehaviorTests(unittest.TestCase):
-    """Pin the match semantics of the shipped .gitignore for upskill reports.
+    """Pin the real match semantics of the shipped .gitignore.
 
-    The upskill skill resolves `upskill/` relative to its own directory (the
-    same observed behavior the **/job_scraper rules exist for), so a report
-    must be ignored at that depth too. The skill's own SKILL.md lives in a
-    directory that shares the `upskill` name, so a broad `**/upskill/*.md`
-    would ignore the template's own skill file - this pins that it stays
-    tracked. Guard presence checks cannot see either property; only real
-    check-ignore semantics can.
+    Two properties presence checks cannot see: the scrape state is ignored at
+    the depth the job-scraper skill actually writes it (it resolves
+    `job_scraper/` relative to its own directory), and the empty-folder markers
+    that give the repository its shape stay tracked.
     """
 
-    def test_upskill_reports_ignored_at_depth_but_skill_md_stays_tracked(self):
+    def test_shipped_gitignore_matches_where_it_must(self):
         root = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, root, ignore_errors=True)
-        subprocess.run(
-            ["git", "init", "-q", str(root)], check=True, capture_output=True
-        )
+        subprocess.run(["git", "init", "-q", str(root)], check=True, capture_output=True)
         shutil.copy(REPO_ROOT / ".gitignore", root / ".gitignore")
         cases = {
-            "upskill/report-2026-08-11.md": True,
-            ".claude/skills/upskill/upskill/report-2026-08-11.md": True,
-            ".claude/skills/upskill/upskill/report-2026-08-11-acme-engineer.md": True,
-            ".claude/skills/upskill/SKILL.md": False,
+            "job_scraper/seen_jobs.json": True,
+            ".claude/skills/job-scraper/job_scraper/seen_jobs.json": True,
+            "documents/cv/my_cv.tex": True,
+            "documents/statements/research_statement.tex": True,
+            "applications/some_dept_assistant_professor/cover_letter.tex": True,
+            "job_search_tracker.csv": True,
+            "documents/cv/.gitkeep": False,
+            "applications/.gitkeep": False,
+            "job_scraper/.gitkeep": False,
+            "templates/statement.tex": False,
+            ".claude/skills/job-scraper/SKILL.md": False,
         }
         for path, expect_ignored in cases.items():
             with self.subTest(path=path):
@@ -300,19 +304,21 @@ class GitignorePatternBehaviorTests(unittest.TestCase):
 
 class GitignoreNegationTests(GuardRepoFixture):
     def test_negation_reincluding_personal_data_fails(self):
-        # .gitignore is order-sensitive: `!salary_data.json` after the
-        # `salary_data.json` rule re-includes the file, so the required rule is
-        # still present but no longer takes effect. Set membership on the
+        # .gitignore is order-sensitive: `!job_search_tracker.csv` after the
+        # `job_search_tracker.csv` rule re-includes the file, so the required
+        # rule is still present but no longer takes effect. Set membership on the
         # required rules cannot see this, so the negation must be rejected.
-        self.write_gitignore(list(security_guards.REQUIRED_IGNORE_RULES) + ["!salary_data.json"])
+        self.write_gitignore(
+            list(security_guards.REQUIRED_IGNORE_RULES) + ["!job_search_tracker.csv"]
+        )
         result = run_guards(self.root)
         self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
         self.assertIn("negation rule not in the reviewed allowlist", result.stdout)
-        self.assertIn("!salary_data.json", result.stdout)
+        self.assertIn("!job_search_tracker.csv", result.stdout)
 
     def test_allowlisted_negations_pass(self):
-        # The template's own benign negations (example CV/cover letter, fonts,
-        # .gitkeep placeholders) must keep passing.
+        # The template's own benign negations (the .gitkeep markers) must keep
+        # passing.
         self.write_gitignore(
             list(security_guards.REQUIRED_IGNORE_RULES)
             + sorted(security_guards.ALLOWED_IGNORE_NEGATIONS)
@@ -321,63 +327,40 @@ class GitignoreNegationTests(GuardRepoFixture):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
 
-class ManifestGuardTests(GuardRepoFixture):
-    def test_each_lifecycle_script_fails(self):
-        for script in sorted(security_guards.FORBIDDEN_SCRIPTS):
-            with self.subTest(script=script):
-                # The guard flags the script KEY; the value is never inspected,
-                # so it must stay benign: attack-shaped values (curl-pipe-to-sh
-                # etc.) written to disk trip AV heuristics - Windows Defender
-                # quarantines the fixture mid-test and the suite goes flaky.
-                self.write_manifest(
-                    {"name": "example-cli", "scripts": {script: "echo test"}}
-                )
+class NodeToolchainGuardTests(GuardRepoFixture):
+    """This workspace runs on python3 and pdflatex; a package.json means an
+    installer, and an installer runs dependency lifecycle scripts on every
+    user's machine. The guard rejects the manifest rather than policing it."""
+
+    def test_package_manifest_anywhere_fails(self):
+        for relative in (
+            "package.json",
+            "tools/package.json",
+            ".claude/skills/example/cli/package.json",
+        ):
+            with self.subTest(path=relative):
+                target = self.root / relative
+                self.write_manifest({"name": "x", "scripts": {"start": "node ."}}, target)
                 result = run_guards(self.root)
-                self.assertEqual(result.returncode, 1)
-                self.assertIn("lifecycle script", result.stdout)
-                self.assertIn(script, result.stdout)
-        self.write_manifest({"name": "example-cli", "scripts": {}})
+                target.unlink()
+                self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+                self.assertIn("ships no Node toolchain", result.stdout)
+                self.assertIn(relative, result.stdout.replace("\\", "/"))
 
-    def test_trusted_dependencies_fails(self):
-        self.write_manifest({"name": "example-cli", "trustedDependencies": ["left-pad"]})
-        result = run_guards(self.root)
-        self.assertEqual(result.returncode, 1)
-        self.assertIn("trustedDependencies", result.stdout)
-
-    def test_malformed_manifest_shape_fails_cleanly(self):
-        for data, message in [
-            ([], "top-level JSON value must be an object"),
-            ({"name": "example-cli", "scripts": []}, "scripts must be an object"),
-        ]:
-            with self.subTest(data=data):
-                self.write_manifest(data)
-                result = run_guards(self.root)
-                self.assertEqual(result.returncode, 1)
-                self.assertIn(message, result.stdout)
-                self.assertNotIn("Traceback", result.stderr)
-
-    def test_benign_scripts_pass(self):
+    def test_manifest_inside_node_modules_is_ignored(self):
+        # A vendored dependency's own manifest is not a declaration that this
+        # repository has a toolchain, and flagging it would make the guard
+        # unusable for anyone who once ran an installer here.
         self.write_manifest(
-            {"name": "example-cli", "scripts": {"start": "bun run src/cli.ts", "test": "bun test", "typecheck": "tsc --noEmit"}}
+            {"name": "dep"},
+            self.root / "node_modules" / "some-dep" / "package.json",
         )
         result = run_guards(self.root)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
-    def test_node_modules_manifests_are_ignored(self):
-        # Installed dependencies are not repo-tracked code; a hostile manifest
-        # inside node_modules must not fail the guard (and bun blocks its
-        # lifecycle scripts anyway).
-        nm = self.manifest.parent / "node_modules" / "some-dep" / "package.json"
-        nm.parent.mkdir(parents=True)
-        self.write_manifest({"name": "some-dep", "scripts": {"postinstall": "echo test"}}, path=nm)
+    def test_clean_tree_has_no_manifest(self):
         result = run_guards(self.root)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-
-    def test_no_manifests_at_all_fails(self):
-        self.manifest.unlink()
-        result = run_guards(self.root)
-        self.assertEqual(result.returncode, 1)
-        self.assertIn("no package.json files found", result.stdout)
 
 
 class RealRepoTests(unittest.TestCase):
