@@ -42,11 +42,18 @@ commit; do not delete the test.
 `tools/boards.py` holds one `parse_<board>` function per board, each taking `bytes`
 and returning records in the shared shape. To add one:
 
-1. Confirm the board serves listings to a plain client (`curl` with a browser
-   User-Agent). If it needs JavaScript, add a `site:` query to
-   `search-queries.md` instead - that is not a defeat, it is the cheaper answer.
-2. Write the parser, register it in `PARSERS` and `URLS`, add it to `BOARDS`.
-3. Save a **trimmed** fixture with two listings in `tests/fixtures/`, and add a test
+1. Check the board's published policy first: `python3 tools/robots_check.py
+   '<listings URL>'`. A non-zero exit means the site has declined; add a `site:`
+   query to `search-queries.md` and stop - do not probe it with browser headers.
+   The gate is the same one `09-web-research.md` puts in front of the retry, and it
+   applies to a contributor exploring a board exactly as it applies at runtime.
+2. Only then confirm the board serves listings to a plain client, using the
+   browser-header `curl` in `09-web-research.md`. If it needs JavaScript, add a
+   `site:` query instead - that is not a defeat, it is the cheaper answer.
+3. Write the parser, register it in `PARSERS` and `URLS`, add it to `BOARDS`.
+   `boards.py` calls it through `parse()`, so a parser that raises on changed
+   markup degrades that one board instead of aborting the sweep.
+4. Save a **trimmed** fixture with two listings in `tests/fixtures/`, and add a test
    asserting the fields it must extract. Never commit a full board dump.
 
 ## Style

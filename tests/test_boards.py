@@ -6,11 +6,16 @@ turns that into a failing test. Each is two real listings, trimmed by hand -
 never a full board dump.
 """
 
+import argparse
+import contextlib
+import email.message
 import io
 import json
 import subprocess
 import sys
 import unittest
+import unittest.mock
+import urllib.error
 import zipfile
 from pathlib import Path
 
@@ -257,3 +262,134 @@ class CommandLineTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ParserIsolationTests(unittest.TestCase):
+    """One board failing never aborts the others - BoardError's own promise.
+
+    Only `fetch` and the XLSX reader raised BoardError. A parser reads live
+    markup, so a ParseError or KeyError from a changed board walked straight
+    past main's handler and `--board all` lost every board.
+    """
+
+    def test_a_parser_blowing_up_becomes_a_board_error(self):
+        with unittest.mock.patch.dict(
+            boards.PARSERS, {"joe": lambda payload: (_ for _ in ()).throw(KeyError("column"))}
+        ):
+            with self.assertRaises(boards.BoardError):
+                boards.parse("joe", b"")
+
+    def test_a_board_error_is_not_double_wrapped(self):
+        original = boards.BoardError("already reported")
+        with unittest.mock.patch.dict(
+            boards.PARSERS, {"joe": lambda payload: (_ for _ in ()).throw(original)}
+        ):
+            with self.assertRaises(boards.BoardError) as caught:
+                boards.parse("joe", b"")
+        self.assertIs(caught.exception, original)
+
+    def test_the_other_boards_still_return_when_one_parser_breaks(self):
+        def broken(payload):
+            raise ValueError("markup changed")
+
+        stdout = io.StringIO()
+        with unittest.mock.patch.dict(boards.PARSERS, {"joe": broken}), \
+             unittest.mock.patch.object(
+                 boards, "fetch",
+                 lambda url: (FIXTURES / "ejm_positions.html").read_bytes()), \
+             contextlib.redirect_stdout(stdout):
+            code = boards.main(["--board", "all", "--format", "json"])
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(code, 0)
+        self.assertTrue(payload["results"], "a broken parser emptied the whole sweep")
+        self.assertTrue(any("joe" in problem for problem in payload["meta"]["errors"]))
+
+
+class LimitFlagTests(unittest.TestCase):
+    """`--limit 0` read as "no limit" and `--limit -1` silently dropped a row."""
+
+    def test_a_non_positive_limit_is_refused(self):
+        for value in ("0", "-1"):
+            with self.subTest(value=value):
+                with self.assertRaises(argparse.ArgumentTypeError):
+                    boards._positive(value)
+
+    def test_a_positive_limit_is_accepted(self):
+        self.assertEqual(boards._positive("3"), 3)
+
+
+class RetryTests(unittest.TestCase):
+    """A board answering 429 or 503 is busy, not unreadable."""
+
+    def _fetch_returning(self, responses):
+        calls = []
+
+        def fake_urlopen(request, timeout=None):
+            calls.append(request.full_url)
+            outcome = responses[len(calls) - 1]
+            if isinstance(outcome, Exception):
+                raise outcome
+            return outcome
+
+        return fake_urlopen, calls
+
+    @staticmethod
+    def _ok(body=b"payload"):
+        response = unittest.mock.MagicMock()
+        response.read.return_value = body
+        response.headers.get.return_value = None
+        response.__enter__.return_value = response
+        response.__exit__.return_value = False
+        return response
+
+    @staticmethod
+    def _http(code):
+        return urllib.error.HTTPError("http://b", code, "busy", email.message.Message(), None)
+
+    def test_a_transient_status_is_retried_then_succeeds(self):
+        fake, calls = self._fetch_returning([self._http(503), self._ok()])
+        with unittest.mock.patch.object(boards.urllib.request, "urlopen", fake), \
+             unittest.mock.patch.object(boards.time, "sleep") as slept:
+            self.assertEqual(boards.fetch("http://b"), b"payload")
+        self.assertEqual(len(calls), 2)
+        slept.assert_called_once()
+
+    def test_a_permanent_status_is_not_retried(self):
+        fake, calls = self._fetch_returning([self._http(404)])
+        with unittest.mock.patch.object(boards.urllib.request, "urlopen", fake), \
+             unittest.mock.patch.object(boards.time, "sleep"):
+            with self.assertRaises(boards.BoardError):
+                boards.fetch("http://b")
+        self.assertEqual(len(calls), 1, "a 404 was retried")
+
+    def test_a_dead_host_fails_fast(self):
+        # Retrying a refused connection just delays the report.
+        fake, calls = self._fetch_returning([urllib.error.URLError("refused")])
+        with unittest.mock.patch.object(boards.urllib.request, "urlopen", fake), \
+             unittest.mock.patch.object(boards.time, "sleep"):
+            with self.assertRaises(boards.BoardError):
+                boards.fetch("http://b")
+        self.assertEqual(len(calls), 1)
+
+    def test_retries_are_bounded(self):
+        fake, calls = self._fetch_returning([self._http(429)] * boards.RETRIES)
+        with unittest.mock.patch.object(boards.urllib.request, "urlopen", fake), \
+             unittest.mock.patch.object(boards.time, "sleep"):
+            with self.assertRaises(boards.BoardError):
+                boards.fetch("http://b")
+        self.assertEqual(len(calls), boards.RETRIES)
+
+    def test_a_sane_retry_after_is_honoured_and_an_absurd_one_is_capped(self):
+        for header, expected in (("5", 5.0), ("99999", 30.0), ("Wed, 21 Oct 2026 07:28:00 GMT", None)):
+            with self.subTest(header=header):
+                error = self._http(429)
+                error.headers["Retry-After"] = header
+                fake, _ = self._fetch_returning([error, self._ok()])
+                with unittest.mock.patch.object(boards.urllib.request, "urlopen", fake), \
+                     unittest.mock.patch.object(boards.time, "sleep") as slept:
+                    boards.fetch("http://b")
+                delay = slept.call_args[0][0]
+                if expected is None:
+                    self.assertEqual(delay, boards.BACKOFF)  # fell back to backoff
+                else:
+                    self.assertEqual(delay, expected)

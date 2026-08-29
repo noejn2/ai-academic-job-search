@@ -28,6 +28,10 @@ Every board returns the same record shape:
 
 Missing values are empty strings, never null, so downstream consumers can treat
 every field as text. Standard library only.
+
+A board answering 429 or 5xx is retried with a widening pause; a refused
+connection is not. Any parser failure is reported as a BoardError against that
+one board, so `--board all` never loses the boards that did answer.
 """
 
 from __future__ import annotations
@@ -40,6 +44,7 @@ import io
 import json
 import re
 import sys
+import time
 import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -82,18 +87,44 @@ class BoardError(Exception):
 # --------------------------------------------------------------------------- #
 
 
+# A board answering 429 or 5xx is busy, not unreadable. Three tries with a
+# widening pause costs at most ~6s and saves the whole board for the sweep.
+RETRY_STATUSES = frozenset({429, 500, 502, 503, 504})
+RETRIES = 3
+BACKOFF = 2.0
+
+
 def fetch(url: str) -> bytes:
     request = urllib.request.Request(
         url, headers={"User-Agent": USER_AGENT, "Accept-Encoding": "gzip"}
     )
-    try:
-        with urllib.request.urlopen(request, timeout=TIMEOUT) as response:
-            payload = response.read()
-            if response.headers.get("Content-Encoding") == "gzip":
-                payload = gzip.decompress(payload)
-            return payload
-    except (urllib.error.URLError, urllib.error.HTTPError, OSError) as exc:
-        raise BoardError(f"{url}: {exc}") from exc
+    for attempt in range(1, RETRIES + 1):
+        try:
+            with urllib.request.urlopen(request, timeout=TIMEOUT) as response:
+                payload = response.read()
+                if response.headers.get("Content-Encoding") == "gzip":
+                    payload = gzip.decompress(payload)
+                return payload
+        except urllib.error.HTTPError as exc:
+            if exc.code not in RETRY_STATUSES or attempt == RETRIES:
+                raise BoardError(f"{url}: {exc}") from exc
+            _pause(exc.headers.get("Retry-After"), attempt)
+        except (urllib.error.URLError, OSError) as exc:
+            # Connection refused, DNS failure, timeout: the host is not
+            # answering. Retrying a dead host just delays the report.
+            raise BoardError(f"{url}: {exc}") from exc
+    raise BoardError(f"{url}: gave up after {RETRIES} attempts")
+
+
+def _pause(retry_after: str | None, attempt: int) -> None:
+    """Honour Retry-After when the board sends a sane one, else back off."""
+    delay = BACKOFF * attempt
+    if retry_after:
+        try:
+            delay = min(max(float(retry_after), 0.0), 30.0)
+        except ValueError:
+            pass  # an HTTP-date Retry-After; the backoff below is good enough
+    time.sleep(delay)
 
 
 def strip_tags(fragment: str) -> str:
@@ -389,6 +420,30 @@ def render_table(rows: list[dict]) -> str:
     return "\n".join(lines)
 
 
+def _positive(value: str) -> int:
+    """--limit 0 read as "no limit" and --limit -1 silently dropped the last row."""
+    number = int(value)
+    if number < 1:
+        raise argparse.ArgumentTypeError("must be 1 or more")
+    return number
+
+
+def parse(board: str, payload: bytes) -> list[dict]:
+    """Run a board's parser, turning any failure into a BoardError.
+
+    The parsers read live markup and a board can change it without notice.
+    Without this, a stray ParseError or KeyError escapes main's handler and
+    `--board all` loses every other board too - the one thing BoardError
+    promises never happens.
+    """
+    try:
+        return PARSERS[board](payload)
+    except BoardError:
+        raise
+    except Exception as exc:
+        raise BoardError(f"parser failed on the response: {exc!r}") from exc
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--board", default="all", choices=("all",) + BOARDS)
@@ -403,7 +458,7 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="drop postings whose section or title is not an academic appointment",
     )
-    parser.add_argument("--limit", type=int, default=0)
+    parser.add_argument("--limit", type=_positive, default=None)
     parser.add_argument("--format", default="json", choices=("json", "table"))
     parser.add_argument(
         "--fixture",
@@ -424,7 +479,7 @@ def main(argv: list[str] | None = None) -> int:
                     payload = handle.read()
             else:
                 payload = fetch(URLS[board])
-            rows.extend(PARSERS[board](payload))
+            rows.extend(parse(board, payload))
         except BoardError as exc:
             errors.append(f"{board}: {exc}")
 
@@ -432,7 +487,7 @@ def main(argv: list[str] | None = None) -> int:
         rows = [row for row in rows if is_academic(row)]
     rows = [row for row in rows if matches(row, args.query)]
     rows.sort(key=lambda row: (row["deadline"] or "9999-99-99", row["institution"]))
-    if args.limit:
+    if args.limit is not None:
         rows = rows[: args.limit]
 
     if args.format == "table":
