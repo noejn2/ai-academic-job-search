@@ -77,9 +77,18 @@ date,institution,department,role,appointment,status,fit_rating,contact_person,no
 ## Step 4: Reset the profile files
 
 For each file in the reset list, restore the shipped version: every `[BRACKETED]`
-placeholder back in place, the `<!-- SETUP: ... -->` comment on the first line, no
-personal data anywhere. Restore `Profile status: incomplete` in
-`01-candidate-profile.md`.
+placeholder back in place and no personal data anywhere. Restore
+`Profile status: incomplete` in `01-candidate-profile.md`.
+
+The two kinds of file in that list are restored to different shapes, and the
+difference is not cosmetic - `tests/test_placeholders.py` asserts both:
+
+- **The markdown profile files** each open with a `<!-- SETUP: ... -->` comment
+  saying what writes them. Put it back on the first line.
+- **`templates/preamble.tex` and `templates/cover_letter.tex`** never carried that
+  comment - they are LaTeX, and their header is a `%` comment describing the
+  template. Restore their `[BRACKETED]` tokens and leave the header alone. Do not
+  invent an HTML comment for them.
 
 If the repository is a git checkout and the file is tracked and unmodified upstream,
 `git checkout -- <file>` is the reliable way. Otherwise rewrite the file from its

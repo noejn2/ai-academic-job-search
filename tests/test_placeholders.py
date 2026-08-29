@@ -21,6 +21,7 @@ PROFILE = REPO_ROOT / ".claude" / "skills" / "job-application-assistant"
 FILLED_BY_SETUP = [
     PROFILE / "01-candidate-profile.md",
     PROFILE / "02-behavioral-profile.md",
+    PROFILE / "03-writing-style.md",
     PROFILE / "04-job-evaluation.md",
     PROFILE / "07-interview-prep.md",
     PROFILE / "08-statements.md",
@@ -33,7 +34,30 @@ TEMPLATES = [
     REPO_ROOT / "templates" / "cover_letter.tex",
 ]
 
+def read_section(path, heading):
+    """The body under an exact heading line, up to the next heading."""
+    lines = path.read_text(encoding="utf-8").splitlines()
+    body = []
+    for line in lines[lines.index(heading.rstrip()) + 1:]:
+        if re.match(r"#{1,4} ", line):
+            break
+        body.append(line)
+    return "\n".join(body)
+
+
 PLACEHOLDER = re.compile(r"\[[A-Z][A-Z_0-9 ]*\]")
+# The SETUP marker itself says "replace every [BRACKETED] token", and that
+# sentence matches PLACEHOLDER. A file whose real placeholders had all been
+# filled in therefore passed on the strength of the marker's own prose.
+PROSE_TOKENS = {"[BRACKETED]"}
+
+
+def real_placeholders(text):
+    """Placeholders in the body, not the word "[BRACKETED]" in the marker."""
+    body = "\n".join(
+        line for line in text.splitlines() if not line.startswith(SETUP_MARKER)
+    )
+    return [token for token in PLACEHOLDER.findall(body) if token not in PROSE_TOKENS]
 SETUP_MARKER = "<!-- SETUP:"
 
 # Everything tracked. documents/ and applications/ are gitignored, so a file
@@ -42,6 +66,36 @@ TRACKED_TEXT = shipped_files(
     "*.md", ".claude/**/*.md", ".claude/**/*.json", "templates/*.tex",
     "tools/*.py", "tests/*.py", "*.csv", ".github/**/*",
 )
+
+
+class GuardCoverageTests(unittest.TestCase):
+    """FILLED_BY_SETUP must be derived from /setup, not remembered by hand.
+
+    03-writing-style.md was written by /setup Step 7 and absent from this list
+    for two releases, so a fork could run /setup, have its own letter patterns
+    appended, push, and every test here would pass.
+    """
+
+    def test_every_markdown_file_setup_writes_is_guarded_here(self):
+        step7 = read_section(REPO_ROOT / ".claude" / "commands" / "setup.md", "## Step 7: Write")
+        written = re.findall(r"^- `([\w./-]+\.md)`", step7, re.M)
+        self.assertGreaterEqual(len(written), 6, "Step 7's file list did not parse")
+        guarded = {path.name for path in FILLED_BY_SETUP}
+        for target in sorted(written):
+            with self.subTest(target=target):
+                self.assertIn(
+                    Path(target).name, guarded,
+                    f"/setup Step 7 writes {target} but FILLED_BY_SETUP does not guard it",
+                )
+
+    def test_every_tex_file_setup_writes_is_guarded_as_a_template(self):
+        step7 = read_section(REPO_ROOT / ".claude" / "commands" / "setup.md", "## Step 7: Write")
+        written = re.findall(r"`([\w./-]+\.tex)`", step7)
+        self.assertTrue(written, "Step 7 names no .tex file")
+        guarded = {path.name for path in TEMPLATES}
+        for target in sorted(set(written)):
+            with self.subTest(target=target):
+                self.assertIn(Path(target).name, guarded)
 
 
 class PlaceholderTests(unittest.TestCase):
@@ -54,7 +108,7 @@ class PlaceholderTests(unittest.TestCase):
                     f"{path.name} must open with a {SETUP_MARKER} comment",
                 )
                 self.assertTrue(
-                    PLACEHOLDER.search(text),
+                    real_placeholders(text),
                     f"{path.name} has no [BRACKETED] placeholder left - "
                     "it looks filled in, which means personal data may ship",
                 )

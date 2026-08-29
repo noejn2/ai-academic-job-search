@@ -60,13 +60,13 @@ Short, specific stories the committee questions above can draw on. `/setup` draf
 the stubs from your record; you finish them, because only you know what actually
 happened.
 
-### [Achievement title]
-**Source:** [paper / grant / course / dataset]
-**Situation:** [one sentence]
-**Task:** [what was yours to do]
-**Action:** [what you did, specifically]
-**Result:** [what changed, with a number where one exists]
-**Answers:** [which of the questions above this serves]
+### [ACHIEVEMENT TITLE]
+**Source:** [PAPER OR GRANT OR COURSE OR DATASET]
+**Situation:** [SITUATION - ONE SENTENCE]
+**Task:** [TASK - WHAT WAS YOURS TO DO]
+**Action:** [ACTION - WHAT YOU DID, SPECIFICALLY]
+**Result:** [RESULT - WHAT CHANGED, WITH A NUMBER WHERE ONE EXISTS]
+**Answers:** [WHICH QUESTIONS ABOVE THIS SERVES]
 
 ## Roleplay
 

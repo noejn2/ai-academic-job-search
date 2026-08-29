@@ -1,3 +1,4 @@
+<!-- SETUP: /setup Step 7 writes the patterns section at the foot of this file from your own letters. /reset clears it back to the [BRACKETED] placeholder. -->
 # Writing Style
 
 Applies to every document this workspace produces: cover letters, statements,
@@ -49,3 +50,5 @@ recurring patterns, not the prose. Do not edit by hand.
 **This section is user-derived, so `/reset` clears it.** Anything written here comes
 from letters you wrote; a copy of this template handed to someone else must not carry
 your phrasing.
+
+[NO_PATTERNS_OBSERVED_YET]
