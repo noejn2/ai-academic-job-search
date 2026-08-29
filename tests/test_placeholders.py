@@ -101,9 +101,12 @@ class NoPersonalDataTests(unittest.TestCase):
                 match, f"{path.relative_to(REPO_ROOT)}: phone number {match and match.group(0)!r}"
             )
 
-    def test_the_tracker_ships_empty(self):
-        rows = (REPO_ROOT / "job_search_tracker.csv").read_text(encoding="utf-8")
-        self.assertEqual(len(rows.strip().splitlines()), 1, "tracker ships with data rows")
+    def test_the_tracker_is_not_shipped(self):
+        # The tracker names every search the user is in. It is gitignored and
+        # created on first use by /apply; a checkout must not contain one, and a
+        # working copy that has one must have only the user's own rows in it.
+        tracker = REPO_ROOT / "job_search_tracker.csv"
+        self.assertTrue(git_ignores(tracker), "job_search_tracker.csv must be gitignored")
 
     def test_no_packet_or_document_is_tracked(self):
         # .gitkeep markers give the folders their shape; anything else in them

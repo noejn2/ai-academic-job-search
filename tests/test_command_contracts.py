@@ -95,14 +95,18 @@ class PipelineTests(unittest.TestCase):
 
 
 class TrackerTests(unittest.TestCase):
-    def test_the_shipped_csv_holds_the_header_and_no_rows(self):
-        lines = read(REPO_ROOT / "job_search_tracker.csv").strip().splitlines()
-        self.assertEqual(lines, [TRACKER_HEADER])
+    def test_a_local_tracker_if_present_starts_with_the_header(self):
+        # Not shipped (gitignored, created by /apply on first use), but when a
+        # working copy has one its first line must be the header the commands
+        # agree on, or every column reads shifted.
+        tracker = REPO_ROOT / "job_search_tracker.csv"
+        if not tracker.exists():
+            self.skipTest("no tracker in this checkout - created on first /apply")
+        self.assertEqual(read(tracker).splitlines()[0], TRACKER_HEADER)
 
-    def test_apply_reset_and_the_csv_agree_on_the_header(self):
-        # Three copies of one string. /apply creates the file, /reset restores
-        # it, and the shipped file is what a user starts from; a mismatch means
-        # a column silently shifts.
+    def test_apply_and_reset_agree_on_the_header(self):
+        # Two copies of one string. /apply creates the file, /reset restores
+        # it; a mismatch means a column silently shifts.
         for path in (COMMANDS / "apply.md", COMMANDS / "reset.md"):
             with self.subTest(file=path.name):
                 self.assertIn(TRACKER_HEADER, read(path))

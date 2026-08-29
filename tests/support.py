@@ -30,8 +30,10 @@ _IGNORED_DIRS = {"documents", "applications", "job_scraper", ".git", "__pycache_
 def is_ignored(path: Path) -> bool:
     relative = path.relative_to(REPO_ROOT)
     if set(relative.parts) & _IGNORED_DIRS:
-        # documents/README.md is tracked and is part of the template.
-        return relative.name != "README.md"
+        # documents/README.md and the .gitkeep markers are tracked: they are
+        # the folder contract the template ships. Everything else there is the
+        # user's own.
+        return relative.name not in ("README.md", ".gitkeep")
     if str(relative) in _LITERAL_IGNORES or relative.name in _LITERAL_IGNORES:
         return True
     return False

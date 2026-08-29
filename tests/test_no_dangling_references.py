@@ -41,9 +41,23 @@ RUNTIME_PATHS = {
     "job_scraper/seen_jobs.json",
     "seen_jobs.json",
     "job_search_tracker.csv",
-    # Written into a packet by /apply, per posting.
+    # Written into a packet by /apply or /outcome, per posting.
     "checklist.md",
     "cv.tex",
+    "cover_letter.tex",
+    "job_posting.md",
+    "references.md",
+    "outcome.md",
+    # The user's own masters in documents/statements/.
+    "research_statement.tex",
+    "teaching_statement.tex",
+}
+
+# Every file that ships, by bare name, for resolving unqualified references.
+# Built from shipped_files so a user's gitignored documents/ and applications/
+# can never satisfy a reference by accident - CI has neither.
+SHIPPED_NAMES = {path.name for path in shipped_files("**/*")} | {
+    f"{path.parent.name}/" for path in shipped_files("**/*")
 }
 
 
@@ -94,9 +108,9 @@ class ReferencedPathsExistTests(unittest.TestCase):
                 target = REPO_ROOT / candidate
                 if target.exists():
                     continue
-                # A bare filename is allowed when a file of that name exists
-                # somewhere in the tree (profile files are named this way).
-                if "/" not in candidate.rstrip("/") and list(REPO_ROOT.rglob(candidate)):
+                # A bare filename is allowed when a shipped file has that name
+                # (profile files are referred to this way).
+                if "/" not in candidate.rstrip("/") and candidate in SHIPPED_NAMES:
                     continue
                 # Per-packet and per-document artifacts, created by /apply.
                 if candidate.startswith(("applications/", "documents/", "cv/", "prep_")):
