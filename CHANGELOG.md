@@ -1,5 +1,68 @@
 # Changelog
 
+## 1.3.0
+
+Clears the ten findings the second side-by-side comparison against
+[MadsLorentzen/ai-job-search](https://github.com/MadsLorentzen/ai-job-search) left
+open. Nothing here changes the pipeline's shape; every item is a promise one file
+made that another file did not keep.
+
+**Added**
+
+- `.github/ISSUE_TEMPLATE/` - a bug-report template and a contact link. This tracker
+  is public, and someone who cloned the repository rather than using **Use this
+  template** has `gh` pointed at it. The warning sits above the first field, names
+  what not to paste (a posting, a fit evaluation, a tracker row) and gives the
+  `gh repo set-default` fix. The idea is upstream's; the wording is for a template.
+- `/rank` Step 3b retires an entry whose `first_seen` is older than 120 days and
+  that has no tracker row, as `status: stale`. `search-queries.md` documented that
+  window and `rank.md` cited it as fact; nothing implemented it.
+- `boards.py` retries a board answering 429 or 5xx three times with a widening pause,
+  honouring a sane `Retry-After` and capping an absurd one. A refused connection is
+  still not retried.
+
+**Fixed**
+
+- One board's parser failing aborted the whole sweep. Only `fetch` and the XLSX
+  reader raised `BoardError`, so a `ParseError` from changed markup escaped `main`
+  and `--board all` lost the boards that had answered - the one thing
+  `BoardError`'s own docstring promises never happens. Parsers now run through
+  `parse()`.
+- `--limit 0` read as "no limit" and `--limit -1` silently returned one row fewer
+  than asked for, exit 0.
+- `03-writing-style.md` is written by `/setup` and cleared by `/reset`, but carried
+  no `SETUP` marker and no `[BRACKETED]` token, so `tests/test_placeholders.py` never
+  guarded it: a fork could run `/setup`, have its letter patterns mined into the
+  file, push, and pass every test. `FILLED_BY_SETUP` is now derived from `/setup`
+  Step 7 rather than remembered by hand.
+- The placeholder guard counted the marker's own sentence - "Replace every
+  `[BRACKETED]` token" matches the placeholder pattern - so a fully filled-in file
+  passed on the strength of its own header. It now reads the body only. That
+  immediately failed `07-interview-prep.md`, whose STAR stubs used a different
+  bracketing convention and so had never had a real placeholder to find.
+- `/reset` Step 4 told the agent to restore a `<!-- SETUP: -->` comment to every file
+  in the reset list, which is unfollowable for the two `.tex` templates.
+- `/scrape` and `/rank` wrote two vocabularies into the same `gate` field while
+  `rank.md` said outright that they must not disagree. `04-job-evaluation.md` now
+  lists the five permitted values once. A past deadline is no longer a gate at all.
+- `/rank` fetched every posting on every run with a bare `WebFetch`, ungated, though
+  `09-web-research.md` claimed `/rank` followed its escalation. It does now, and it
+  does not re-fetch what it has already scored unless `--all` is passed.
+- `/outcome` wrote `submitted_<YYYY-MM-DD>/` on a resubmission and nothing read it:
+  `/interview` globbed only `submitted/`, so a pack could be built against the first
+  submission while the committee had read the second.
+- The freeze list omitted the attachments `/apply` copies into a packet, so a writing
+  sample the user later replaced in `documents/` was unrecoverable.
+- `tests/support.py` treated any path containing a gitignored directory *name* as the
+  user's own, so a nested lookalike escaped every personal-data scan silently.
+- `CONTRIBUTING.md` told contributors to probe a new board with a browser-header
+  `curl` and said nothing about `robots.txt`.
+- `README.md`'s packet layout listed neither `prep_<stage>.md` nor `submitted/`, and
+  `AGENTS.md` still described the profile as "files `01` to `08`".
+
+Tests 176 to 207. Every fix mutation-checked: 33 mutations, each verified to turn the
+suite red.
+
 ## 1.2.0
 
 **Added**
